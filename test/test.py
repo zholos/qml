@@ -3,6 +3,7 @@
 import os.path, io
 
 import qform
+import libm
 import matrix
 import conmax
 
@@ -12,7 +13,9 @@ if __name__ == '__main__':
                   "rU") as read:
             for line in read:
                 line = line.rstrip()
-                if line == "---MATRIX---":
+                if line == "---LIBM---":
+                    libm.tests()
+                elif line == "---MATRIX---":
                     matrix.tests()
                 elif line == "---CONMAX---":
                     conmax.tests()

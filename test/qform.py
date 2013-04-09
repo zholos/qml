@@ -6,6 +6,7 @@ from fractions import Fraction
 import decimal
 from decimal import Decimal
 from types import NoneType
+import sympy as sp
 
 decimal.getcontext().prec = 50
 
@@ -52,6 +53,8 @@ def qform(self):
             return n, 1
         if isinstance(n, Fraction):
             return n.numerator, n.denominator
+        if isinstance(n, sp.Rational):
+            return n.p, n.q
 
     def number_form(n):
         if rational(n):
@@ -184,4 +187,7 @@ def test(name, *args, **kwargs):
     if comment:
         comment = " / %s" % comment
 
-    output('    test[".qml.%s%s";"%s"];%s' % (name, call, result, comment))
+    if "_" not in name:
+        name = ".qml.%s" % name
+
+    output('    test["%s%s";"%s"];%s' % (name, call, result, comment))
