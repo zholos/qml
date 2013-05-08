@@ -1,0 +1,39 @@
+{
+   q sn leak
+   Memcheck:Leak
+   fun:*alloc
+   fun:sn
+}
+
+{
+   q sn leak
+   Memcheck:Leak
+   fun:*alloc
+   fun:_sn
+}
+
+{
+   q main leak
+   Memcheck:Leak
+   fun:malloc
+   fun:realloc
+   fun:m1
+   ...
+   fun:nv
+}
+
+{
+   dlopen leak
+   Memcheck:Leak
+   fun:*alloc
+   ...
+   fun:dlopen*
+}
+
+{
+   nss leak
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:getpwuid
+}

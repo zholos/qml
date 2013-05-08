@@ -1,0 +1,503 @@
+#!/bin/sh -e
+
+#
+# Parse command-line options
+#
+
+usage () {
+    cat <<'USAGE'
+Target options:
+
+    KXARCH=l32     q operating system name
+    KXVER=3        q major version
+    QHOME=$HOME/q  installation directory
+
+Compiler options:
+
+    CC=gcc                C compiler
+    FC=gfortran           Fortran compiler
+
+    CFLAGS=-O3            C compiler flags
+    FFLAGS=               Fortran compiler flags
+    FLAGS=-march=native   common flags for both compilers
+
+    TOOLPREFIX=           prefix for ld, ar, ranlib, dlltool, nm binaries
+                          e.g. x86_64-w64-mingw32-
+
+    XCC=gcc               C compiler for build-time programs
+                          e.g. Cygwin gcc when main compiler is MinGW gcc
+
+BLAS options (needed for LAPACK):
+
+  --build-blas                     build Netlib BLAS (fast build)
+  --with-blas=/path/to/libblas.a   use system BLAS library
+
+LAPACK options:
+
+  --build-lapack                       build Netlib LAPACK
+  --with-lapack=/path/to/liblapack.a   use system LAPACK library
+
+USAGE
+}
+
+
+unset CONFTEST KXARCH KXVER QHOME_CONFIG CC FC CFLAGS CFLAGS_FLOAT
+unset FFLAGS FFLAGS_FLOAT FFLAGS_THREAD
+unset FLAGS FLAGS_BITS FLAGS_WINDOWS FLAGS_PIC FLAGS_PIPE
+unset TOOLPREFIX XCC CONFIG LDFLAGS LD_EXPORT LD_STATIC
+unset LIBS_FORTRAN LIBS_BLAS LIBS_LAPACK
+unset FETCH SHA256
+unset BUILD_BLAS BUILD_ATLAS WITH_BLAS WITH_LAPACK
+
+
+for arg in "$@"; do
+    case "$arg" in
+                    KXARCH=*)        KXARCH="${arg#*=}" ;;
+                     KXVER=*)         KXVER="${arg#*=}" ;;
+                        CC=*)            CC="${arg#*=}" ;;
+                        FC=*)            FC="${arg#*=}" ;;
+                    CFLAGS=*)        CFLAGS="${arg#*=}" ;;
+                    FFLAGS=*)        FFLAGS="${arg#*=}" ;;
+                     FLAGS=*)         FLAGS="${arg#*=}" ;;
+                TOOLPREFIX=*)    TOOLPREFIX="${arg#*=}" ;;
+                       XCC=*)           XCC="${arg#*=}" ;;
+                --build-blas)    BUILD_BLAS=1           ;;
+               --build-atlas)   BUILD_ATLAS=1           ;;
+               --with-blas=*)     WITH_BLAS="${arg#*=}" ;;
+              --build-lapack)  BUILD_LAPACK=1           ;;
+             --with-lapack=*)   WITH_LAPACK="${arg#*=}" ;;
+                   -h|--help) usage; exit 0 ;;
+                           *) echo "unknown configure option $1" >&2; exit 1 ;;
+    esac
+done
+
+
+
+#
+# Determine q platform
+#
+
+quiet () {
+    $* </dev/null 2>/dev/null || :
+}
+
+echo -n "q operating system... "
+if [ -n "$KXARCH" ]; then
+    echo "$KXARCH (selected)"
+else
+    # q doesn't run interactively in Cygwin
+    echo '1 string .z.o;' >conftest.q
+    KXARCH=`quiet q conftest.q`
+    if [ -n "$KXARCH" ]; then
+        echo "$KXARCH (detected from q)"
+    else
+        case "$(quiet uname -s):$(quiet uname -m)" in
+            MINGW*:x86_64|CYGWIN*WOW64) KXARCH=w64 ;;
+            MINGW*:*|CYGWIN*)           KXARCH=w32 ;;
+            Linux:x86_64)               KXARCH=l64 ;;
+            Linux:*)                    KXARCH=l32 ;;
+            Darwin:x86_64)              KXARCH=m64 ;;
+            Darwin:*)                   KXARCH=m32 ;;
+            SunOS) case "$(quiet isainfo):$(quiet isainfo -b)" in
+                       i386:64) KXARCH=v64 ;;
+                       i386:*)  KXARCH=v32 ;;
+                       *:64)    KXARCH=s64 ;;
+                       *:*)     KXARCH=s32 ;;
+                   esac ;;
+        esac
+        if [ -n "$KXARCH" ]; then
+            echo "$KXARCH (detected from host)"
+        else
+            echo "unknown"
+        fi
+    fi
+fi
+case $KXARCH in
+    w32|w64|l32|l64|m32|m64|s32|s64|v32|v64) ;;
+    *) echo "unknown q operating system." >&2; exit 1 ;;
+esac
+
+echo -n "q version... "
+if [ -n "$KXVER" ]; then
+    echo "$KXVER (selected)"
+else
+    echo '1 string floor .Q.k;' >conftest.q
+    KXVER=`quiet q conftest.q`
+    if [ -n "$KXVER" ]; then
+        echo "$KXVER (detected from q)"
+    else
+        KXVER=3
+        echo "$KXVER (default)"
+    fi
+fi
+case $KXVER in
+    2|3) ;;
+    *) echo "unknown q version." >&2; exit 1 ;;
+esac
+
+echo -n "q home... "
+if [ -n "${QHOME_CONFIG+n}" ]; then
+    echo "${QHOME_CONFIG:-none} (selected)"
+else
+    # q may be a script that sets QHOME
+    echo '1 getenv`QHOME;' >conftest.q
+    QHOME_CONFIG=`quiet q conftest.q`
+    if [ -n "$QHOME_CONFIG" ]; then
+        echo "$QHOME_CONFIG (detected from q)"
+    else
+        if [ -z "${KXARCH##w*}" ]; then
+            QHOME_CONFIG=c:/q
+        else
+            QHOME_CONFIG=$HOME/q
+        fi
+        echo "$QHOME_CONFIG (default)"
+    fi
+fi
+
+
+
+#
+# Find make
+#
+
+echo -n "looking for GNU make... "
+
+while true; do
+    cat >conftest.mk <<'MAKEFILE'
+ifeq "" ""
+all:
+endif
+MAKEFILE
+    for MAKE in make gmake gnumake; do
+        $MAKE -f conftest.mk >conftest.out 2>conftest.err && break 2
+    done
+    echo "not found"
+    echo "GNU make is required." >&2
+    exit 1
+done
+
+echo $MAKE
+
+
+
+#
+# Test routines
+#
+
+makeenv () {
+    $MAKE "$@" \
+        QML_CONFIGURE=1 \
+        CONFTEST="$CONFTEST" \
+        KXARCH="$KXARCH" \
+        KXVER="$KXVER" \
+        QHOME="$QHOME_CONFIG" \
+        CC="$CC" \
+        FC="$FC" \
+        CFLAGS="$CFLAGS $CFLAGS_FLOAT" \
+        FFLAGS="$FFLAGS $FFLAGS_FLOAT $FFLAGS_THREAD" \
+        FLAGS="$FLAGS $FLAGS_BITS $FLAGS_WINDOWS $FLAGS_PIC $FLAGS_PIPE" \
+        TOOLPREFIX="$TOOLPREFIX" \
+        XCC="$XCC" \
+        CONFIG="$CONFIG" \
+        LDFLAGS="$LDFLAGS" \
+        LD_EXPORT="$LD_EXPORT" \
+        LD_STATIC="$LD_STATIC" \
+        LIBS_FORTRAN="$LIBS_FORTRAN" \
+        LIBS_BLAS="$LIBS_BLAS" \
+        LIBS_LAPACK="$LIBS_LAPACK" \
+        FETCH="$FETCH" \
+        SHA256="$SHA256" \
+        >conftest.out 2>conftest.err
+}
+
+makeyesno () {
+    echo -n "$1 "
+    if makeenv -f mk/test.mk test/$3; then
+        echo yes
+    else
+        echo no
+        echo "$2" >&2; exit 1
+    fi
+}
+
+makeselect () {
+    echo -n "$1 "; fail=$2; var=$3; test=$4; shift 4
+    while [ $# != 0 ]; do
+        eval $var=\'$1\'
+        if makeenv -f mk/test.mk test/"$test"; then
+            if [ -n "$1" ]; then
+                echo $1
+            else
+                echo none
+            fi
+            break
+        fi
+        shift
+    done
+    if [ $# = 0 ]; then
+        echo "not found"
+        echo "$fail" >&2
+        exit 1
+    fi
+}
+
+
+
+#
+# Configure compilers
+#
+
+echo -n "looking for C compiler... "
+CC_selected=$CC
+if [ -n "$CC" ]; then
+    echo "$CC (selected)"
+elif [ -z "${KXARCH##w*}" ]; then
+    # Since gcc 4, a separate MinGW compiler is used to produce native binaries
+    # $CC_choices also used below
+    if [ -z "${KXARCH#?32}" ]; then
+        CC_choices='i686-pc-mingw32-gcc i686-w64-mingw32-gcc'
+    else
+        CC_choices=x86_64-w64-mingw32-gcc
+    fi
+    makeselect "" \
+               "a compiler is required" \
+               CC c_version \
+               $CC_choices gcc
+    CC_selected=$CC
+else
+    CC=gcc
+    echo "$CC (default)"
+fi
+
+makeyesno "checking if C compiler compiles..." \
+          "a working compiler is required." \
+          c_compile
+
+makeyesno "checking if C compiler links..." \
+          "a working compiler is required." \
+          c_link
+
+
+if [ -z "${CFLAGS+n}" ]; then
+    makeselect "selecting C optimization options..." "" \
+               CFLAGS c_link \
+               "-O2 -fno-strict-aliasing" ""
+fi
+
+makeselect "selecting C floating-point options..." \
+           "-ffloat-store is assumed by some libraries." \
+           CFLAGS_FLOAT c_link \
+           -ffloat-store
+
+
+echo -n "looking for C compiler for build-time programs..."
+if [ -n "$XCC" ]; then
+    echo "$XCC (selected)"
+elif [ -z "${KXARCH##w*}" ]; then
+    # Needs to be POSIX-compliant, so use Cygwin gcc by preference
+    makeselect "" \
+               "a compiler is required." \
+               XCC xc_version \
+               gcc $CC_choices "$CC"
+else
+    XCC=$CC
+    echo "$XCC (default)"
+fi
+
+makeyesno "checking if build-time C compiler compiles..." \
+          "a working compiler is required." \
+          xc_compile
+
+makeyesno "checking if build-time C compiler links..." \
+          "a working compiler is required." \
+          xc_link
+
+makeyesno "checking if build-time C compiler output runs..." \
+          "a working compiler is required." \
+          xc_run
+
+
+echo -n "looking for Fortran compiler... "
+if [ -n "$FC" ]; then
+    echo "$FC (selected)"
+elif [ -n "$CC_selected" ] && [ -z "${CC_selected%%*gcc*}" ]; then
+    FC=${CC_selected%gcc*}gfortran${CC_selected##*gcc}
+    echo "$FC (inferred)"
+else
+    FC=gfortran
+    echo "$FC (default)"
+fi
+
+makeyesno "checking if Fortran compiler compiles..." \
+          "a working compiler is required." \
+          f_compile
+
+makeyesno "checking if Fortran compiler links..." \
+          "a working compiler is required." \
+          f_link
+
+if [ -z "${FFLAGS+n}" ]; then
+    makeselect "selecting Fortran optimization options..." "" \
+               FFLAGS f_link \
+               -O2 ""
+fi
+
+makeselect "selecting Fortran floating-point options..." \
+           "-ffloat-store is assumed by some libraries." \
+           FFLAGS_FLOAT f_link \
+           -ffloat-store
+
+makeselect "selecting Fortran thread safety options..." \
+           "-frecursive is necessary for thread-safety." \
+           FFLAGS_THREAD f_link \
+           -frecursive
+
+
+# nm required below
+echo -n "looking for binutils... "
+if [ -n "${TOOLPREFIX+n}" ]; then
+    echo "${TOOLPREFIX}ar (selected)"
+elif [ -n "$CC_selected" ] && [ -z "${CC_selected%%*-gcc*}" ]; then
+    TOOLPREFIX=${CC_selected%gcc*}
+    echo "${TOOLPREFIX}ar (inferred)"
+else
+    echo "${TOOLPREFIX}ar (default)"
+fi
+
+
+makeselect "selecting target options..." \
+           "-m${KXARCH#?} is necessary, try a different compiler." \
+           FLAGS_BITS c_and_f_link \
+           -m${KXARCH#?}
+
+if [ -z "${KXARCH##w*}" ]; then
+    # Cygwin binaries (using cygwin1.dll) don't work; we need native binaries
+    makeselect "selecting Windows options..." \
+               "-mno-cygwin or MinGW compiler required." \
+               FLAGS_WINDOWS no_cygwin \
+               '' -mno-cygwin
+fi
+
+makeselect "selecting additional compiler options..." "" \
+           FLAGS_PIPE c_and_f_link \
+           -pipe ""
+
+
+# May compile successfully without -fPIC but then hang when calling back into q,
+# so use -fPIC by default.
+CONFTEST=shared
+makeselect "selecting shared library options..." \
+           "couldn't create shared library." \
+           FLAGS_PIC shared_link \
+           -fPIC ""
+
+makeselect "selecting how to export specific symbols..." \
+           "couldn't export specific symbols." \
+           LD_EXPORT ld_export \
+           -Wl,--version-script -Wl,-M -exported_symbols_list
+
+
+CONFTEST=builtin
+makeselect "selecting additional libraries for Fortran..." \
+           "couldn't link C and Fortran code together." \
+           LIBS_FORTRAN f_compile_c_link \
+           "" -lgfortran "-lgfortranbegin -lgfortran"
+
+# -fPIC required for this
+# Don't want to depend on MinGW libgfortran.dll, so link statically
+makeselect "selecting how to link a specific library statically..." "" \
+           LD_STATIC ld_static \
+           -Wl,-Bstatic ""
+
+
+
+# Libraries
+
+CONFTEST=blas
+if [ -n "$BUILD_BLAS" ]; then
+    echo "will build BLAS"
+    BUILD_LAPACK=1
+elif [ -n "${WITH_BLAS+n}" ]; then
+    LIBS_BLAS=$WITH_BLAS
+    makeyesno "checking if BLAS works..." \
+              "BLAS is required, use --build-blas or different --with-blas" \
+              c_link
+else
+    makeselect "looking for BLAS..." \
+               "BLAS is required, use --build-blas or --with-blas" \
+               LIBS_BLAS c_link \
+               "" -lblas
+fi
+
+CONFTEST=lapack
+if [ -n "$BUILD_LAPACK" ]; then
+    echo "will build LAPACK"
+elif [ -n "${WITH_LAPACK+n}" ]; then
+    LIBS_LAPACK=$WITH_LAPACK
+    makeyesno "checking if LAPACK works..." \
+           "LAPACK is required, use --build-lapack or different --with-lapack" \
+           c_link
+else
+    makeselect "looking for LAPACK..." \
+               "LAPACK is required, use --build-lapack or --with-lapack" \
+               LIBS_LAPACK c_link \
+               "" -llapack
+fi
+
+
+
+# Utilities
+
+makeyesno "checking if patch works..." \
+          "patch is required." \
+          patch
+
+makeselect "looking for http downloader..." \
+           "http downloader is required." \
+           FETCH fetch \
+           curl wget manual
+
+echo -n "phoning home... "
+echo "just kidding"
+
+makeselect "looking for sha256..." \
+           "sha256 is required." \
+           SHA256 sha256 \
+           sha256 sha256sum
+
+
+
+#
+# Done
+#
+
+echo 'writing configuration to config.mk'
+sed 's/\$/$$/g' >config.mk <<MAKEFILE
+KXARCH         := $KXARCH
+KXVER          := $KXVER
+QHOME          := $QHOME_CONFIG
+CC             := $CC
+FC             := $FC
+CFLAGS         := $CFLAGS $CFLAGS_FLOAT
+FFLAGS         := $FFLAGS $FFLAGS_FLOAT $FFLAGS_THREAD
+FFLAGS_NTHREAD := $FFLAGS $FFLAGS_FLOAT
+FLAGS          := $FLAGS $FLAGS_BITS $FLAGS_WINDOWS $FLAGS_PIC $FLAGS_PIPE
+TOOLPREFIX     := $TOOLPREFIX
+XCC            := $XCC
+CONFIG         := $CONFIG
+LDFLAGS        := $LDFLAGS
+LD_EXPORT      := $LD_EXPORT
+LD_STATIC      := $LD_STATIC
+LIBS_FORTRAN   := $LIBS_FORTRAN
+LIBS_BLAS      := $LIBS_BLAS
+BUILD_BLAS     := $BUILD_BLAS
+LIBS_LAPACK    := $LIBS_LAPACK
+BUILD_LAPACK   := $BUILD_LAPACK
+FETCH          := $FETCH
+SHA256         := $SHA256
+PATCH          := $PATCH
+MAKEFILE
+
+echo "now run $MAKE"
+
+$MAKE -f mk/test.mk clean >/dev/null 2>/dev/null

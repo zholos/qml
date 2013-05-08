@@ -1,0 +1,46 @@
+--- lapack/make.inc.example
++++ lapack/make.inc.example
+@@ -12,12 +12,12 @@
+ #  selected.  Define LOADER and LOADOPTS to refer to the loader and 
+ #  desired load options for your machine.
+ #
+-FORTRAN  = gfortran 
+-OPTS     = -O2
++#FORTRAN  = gfortran 
++#OPTS     = -O2
+ DRVOPTS  = $(OPTS)
+-NOOPT    = -O0
+-LOADER   = gfortran
+-LOADOPTS =
++NOOPT    = $(OPTS) -O0
++LOADER   = $(FORTRAN)
++LOADOPTS = $(OPTS)
+ #
+ # Timer for the SECOND and DSECND routines
+ #
+@@ -42,15 +42,15 @@
+ #
+ # CC is the C compiler, normally invoked with options CFLAGS.
+ #
+-CC = gcc
+-CFLAGS = -O3
++#CC = gcc
++#CFLAGS = -O3
+ #
+ #  The archiver and the flag(s) to use when building archive (library)
+ #  If you system has no ranlib, set RANLIB = echo.
+ #
+-ARCH     = ar
++#ARCH     = ar
+ ARCHFLAGS= cr
+-RANLIB   = ranlib
++#RANLIB   = ranlib
+ #
+ #  Location of the extended-precision BLAS (XBLAS) Fortran library
+ #  used for building and testing extended-precision routines.  The
+@@ -69,3 +69,5 @@
+ LAPACKLIB    = liblapack.a
+ TMGLIB       = libtmglib.a
+ LAPACKELIB   = liblapacke.a
++
++# Settings from qml:

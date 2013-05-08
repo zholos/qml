@@ -1,0 +1,31 @@
+--- qml.q
++++ qml.q
+@@ -9,7 +9,8 @@
+         `sin`cos`tan`asin`acos`atan`sinh`cosh`tanh`asinh`acosh`atanh,`exp`expm1,
+             `log`log10`logb`log1p`sqrt`cbrt`floor`ceil`fabs`erf`erfc,
+             `lgamma`gamma`j0`j1`y0`y1`ncdf`nicdf`kcdf`kicdf,
+-            `mdet`minv`mevu`mchol`mqr`mqrp`mlup`msvd`poly`const;
++            `mdet`minv`mevu`mchol`mqr`mqrp`mlup`msvd`poly`const,
++            `debug_alloc`debug_coverage;
+         `atan2`pow`hypot`fmod`beta`pgammar`pgammarc`ipgammarc`c2cdf`c2icdf,
+             `stcdf`sticdf`pscdf`psicdf`smcdf`smicdf`mm`ms`mls`mlsq,
+             `solve`min`root;
+@@ -28,3 +29,5 @@
+ mpinv:{mm[x 2] flip mm[x 0]
+     ?'[(s=0)|s<eps*s[0;0]*max mdim s;s;reciprocal s:(x:msvd x)1]};
+ mev:{x@\:idesc sum each {x*x} first x:mevu x};
++
++debug_coverage[];
+--- test.q
++++ test.q
+@@ -20,7 +20,9 @@
+ 
+ passed:total:2#0;
+ test:{
+-    total[pass]+:1;passed[pass]+:r:cmp[run x;value y];
++    while[.qml.debug_alloc[];
++        v:@[run;x;{$[x~"wsfull";::;'x]}]];
++    total[pass]+:1;passed[pass]+:r:cmp[v;value y];
+     if[not[r] and pass=0;-1"Failed ",x," = ",y];
+     };
+ 

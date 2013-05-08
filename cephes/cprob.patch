@@ -1,0 +1,181 @@
+--- cprob/cprob.mak
++++ cprob/cprob.mak
+@@ -1,14 +1,14 @@
+ # Makefile for probability integrals.
+ # Be sure to set the type of computer and endianness in mconf.h.
+ 
+-CC = gcc
+-CFLAGS = -O2 -Wall
+ INCS = mconf.h
+ 
+ OBJS = bdtr.o btdtr.o chdtr.o drand.o expx2.o fdtr.o gamma.o gdtr.o \
+-igam.o igami.o incbet.o incbi.o mtherr.o nbdtr.o ndtr.o ndtri.o pdtr.o \
+-stdtr.o unity.o polevl.o const.o
++igam.o igami.o incbet.o incbi.o nbdtr.o ndtr.o ndtri.o pdtr.o \
++stdtr.o unity.o polevl.o const.o kolmogorov.o
+ 
+ libprob.a: $(OBJS) $(INCS)
+-	ar rv libprob.a $(OBJS)
+-	ranlib libprob.a
++	$(AR) rv libprob.a $(OBJS)
++	$(RANLIB) libprob.a
++
++include make.inc
+--- cprob/mconf.h
++++ cprob/mconf.h
+@@ -127,7 +127,7 @@
+ 
+ /* Intel IEEE, low order words come first:
+  */
+-/* #define IBMPC 1 */
++#define IBMPC 1
+ 
+ /* Motorola IEEE, high order words come first
+  * (Sun 680x0 workstation):
+@@ -140,7 +140,7 @@
+  * roundoff problems in pow.c:
+  * (Sun SPARCstation)
+  */
+-#define UNK 1
++/* #define UNK 1 */
+ 
+ /* If you define UNK, then be sure to set BIGENDIAN properly. */
+ #ifdef FLOAT_WORDS_BIGENDIAN
+@@ -186,14 +186,15 @@
+    See atan.c and clog.c. */
+ #define ANSIC 1
+ 
+-/* Get ANSI function prototypes, if you want them. */
+-#if 1
+-/* #ifdef __STDC__ */
+-#define ANSIPROT 1
+-int mtherr ( char *, int );
+-#else
+-int mtherr();
++/* Return nan on all errors. */
++#ifndef NO_MTHERR
++extern double NAN; /* defined in const.c */
++#define mtherr(name, code) do { return NAN; } while (0)
+ #endif
+ 
+-/* Variable for error reporting.  See mtherr.c.  */
+-extern int merror;
++/* Rename internal functions that conflict with starndard library names. */
++#define expm1 cephes_expm1
++#define log1p cephes_log1p
++#define erf   cephes_erf
++#define erfc  cephes_erfc
++#define gamma cephes_gamma
+--- cprob/const.c
++++ cprob/const.c
+@@ -59,6 +59,7 @@
+ Copyright 1984, 1995 by Stephen L. Moshier
+ */
+ 
++#define NO_MTHERR
+ #include "mconf.h"
+ 
+ #ifdef UNK
+--- cprob/gamma.c
++++ cprob/gamma.c
+@@ -266,8 +266,8 @@
+ #define SQTPI *(double *)SQT
+ #endif
+ 
+-int sgngam = 0;
+-extern int sgngam;
++/* sgngam isn't used by other functions in Cephes,
++   and a global variable isn't thread-safe */
+ extern double MAXLOG, MAXNUM, PI;
+ #ifdef ANSIPROT
+ extern double pow ( double, double );
+@@ -327,7 +327,7 @@
+ double p, q, z;
+ int i;
+ 
+-sgngam = 1;
++int sgngam = 1;
+ #ifdef NANS
+ if( isnan(x) )
+ 	return(x);
+@@ -339,7 +339,7 @@
+ if( x == -INFINITY )
+ 	return(NAN);
+ #else
+-if( !isfinite(x) )
++if( x == INFINITY || x == -INFINITY )
+ 	return(x);
+ #endif
+ #endif
+@@ -580,14 +580,14 @@
+ double p, q, u, w, z;
+ int i;
+ 
+-sgngam = 1;
++int sgngam = 1;
+ #ifdef NANS
+ if( isnan(x) )
+ 	return(x);
+ #endif
+ 
+ #ifdef INFINITIES
+-if( !isfinite(x) )
++if( x == INFINITY || x == -INFINITY )
+ 	return(INFINITY);
+ #endif
+ 
+--- cprob/igami.c
++++ cprob/igami.c
+@@ -69,6 +69,9 @@
+ double x0, x1, x, yl, yh, y, d, lgm, dithresh;
+ int i, dir;
+ 
++if( !(y0 > 0 && y0 < 1) )
++    return NAN;
++
+ /* bound the solution */
+ x0 = MAXNUM;
+ yl = 0;
+--- cprob/incbi.c
++++ cprob/incbi.c
+@@ -134,7 +134,7 @@
+ 
+ dir = 0;
+ di = 0.5;
+-for( i=0; i<100; i++ )
++for( i=0; i<500; i++ )
+ 	{
+ 	if( i != 0 )
+ 		{
+@@ -220,7 +220,7 @@
+ 		dir -= 1;
+ 		}
+ 	}
+-mtherr( "incbi", PLOSS );
++/* mtherr( "incbi", PLOSS ); */
+ if( x0 >= 1.0 )
+ 	{
+ 	x = 1.0 - MACHEP;
+--- cprob/kolmogorov.c
++++ cprob/kolmogorov.c
+@@ -45,8 +45,8 @@
+   int v, nn;
+   double evn, omevn, p, t, c, lgamnp1;
+ 
+-  if (n <= 0 || e < 0.0 || e > 1.0)
+-    return (-1.0);
++  if (n <= 0 || !(e >= 0 && e <= 1))
++    return NAN;
+   nn = floor ((double) n * (1.0 - e));
+   p = 0.0;
+   if (n < 1013)
+@@ -95,6 +95,9 @@
+ {
+   double p, t, r, sign, x;
+ 
++  if( y < .12 )
++      return 1;
++
+   x = -2.0 * y * y;
+   sign = 1.0;
+   p = 0.0;
