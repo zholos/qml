@@ -112,7 +112,7 @@ test/ld_static: conftest.f conftest.c
 
 test/ld_export: test/shared_link
 ifeq ($(WINDOWS),)
-	[ f = "$$($(call nm_exports,-D conftest.$(DLLEXT)))" ]
+	[ f = "$$($(call nm_exports,-D conftest.$(DLLEXT)) | grep '^[fg]$$')" ]
 else
 # nm doesn't work this way on Windows, so just assume the mapfile worked
 endif
