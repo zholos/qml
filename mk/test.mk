@@ -130,7 +130,7 @@ test/fetch:
 
 test/sha256:
 	[ ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad = \
-	    "$$(echo -n abc | 2>/dev/null $(sha256))" ]
+	    "$$(printf abc | 2>/dev/null $(sha256))" ]
 
 test/patch:
 	patch </dev/null
