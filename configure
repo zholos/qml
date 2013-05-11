@@ -185,6 +185,9 @@ echo $MAKE
 #
 
 makeenv () {
+    { echo; echo "$1"; } >>conftest.out
+    { echo; echo "$1"; } >>conftest.err
+    shift
     $MAKE "$@" \
         QML_CONFIGURE=1 \
         CONFTEST="$CONFTEST" \
@@ -207,12 +210,12 @@ makeenv () {
         LIBS_LAPACK="$LIBS_LAPACK" \
         FETCH="$FETCH" \
         SHA256="$SHA256" \
-        >conftest.out 2>conftest.err
+        >>conftest.out 2>>conftest.err
 }
 
 makeyesno () {
     echo -n "$1 "
-    if makeenv -f mk/test.mk test/$3; then
+    if makeenv "testing $3:" -f mk/test.mk test/$3; then
         echo yes
     else
         echo no
@@ -224,7 +227,8 @@ makeselect () {
     echo -n "$1 "; fail=$2; var=$3; test=$4; shift 4
     while [ $# != 0 ]; do
         eval $var=\'$1\'
-        if makeenv -f mk/test.mk test/"$test"; then
+        if makeenv "testing $test with $var='$1':" -f mk/test.mk test/"$test"
+        then
             if [ -n "$1" ]; then
                 echo $1
             else
