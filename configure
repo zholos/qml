@@ -81,7 +81,12 @@ quiet () {
     $* </dev/null 2>/dev/null || :
 }
 
-echo -n "q operating system... "
+echo_n () {
+    # echo -n is not portable
+    printf '%s' "$*"
+}
+
+echo_n "q operating system... "
 if [ -n "$KXARCH" ]; then
     echo "$KXARCH (selected)"
 else
@@ -98,11 +103,11 @@ else
             Linux:*)                    KXARCH=l32 ;;
             Darwin:x86_64)              KXARCH=m64 ;;
             Darwin:*)                   KXARCH=m32 ;;
-            SunOS) case "$(quiet isainfo):$(quiet isainfo -b)" in
-                       i386:64) KXARCH=v64 ;;
-                       i386:*)  KXARCH=v32 ;;
-                       *:64)    KXARCH=s64 ;;
-                       *:*)     KXARCH=s32 ;;
+            SunOS:*) case "$(quiet isainfo):$(quiet isainfo -b)" in
+                       *i386*:64) KXARCH=v64 ;;
+                       *i386*:32) KXARCH=v32 ;;
+                       *:64)      KXARCH=s64 ;;
+                       *:32)      KXARCH=s32 ;;
                    esac ;;
         esac
         if [ -n "$KXARCH" ]; then
@@ -117,7 +122,7 @@ case $KXARCH in
     *) echo "unknown q operating system." >&2; exit 1 ;;
 esac
 
-echo -n "q version... "
+echo_n "q version... "
 if [ -n "$KXVER" ]; then
     echo "$KXVER (selected)"
 else
@@ -135,7 +140,7 @@ case $KXVER in
     *) echo "unknown q version." >&2; exit 1 ;;
 esac
 
-echo -n "q home... "
+echo_n "q home... "
 if [ -n "${QHOME_CONFIG+n}" ]; then
     echo "${QHOME_CONFIG:-none} (selected)"
 else
@@ -160,7 +165,7 @@ fi
 # Find make
 #
 
-echo -n "looking for GNU make... "
+echo_n "looking for GNU make... "
 
 while true; do
     cat >conftest.mk <<'MAKEFILE'
@@ -214,7 +219,7 @@ makeenv () {
 }
 
 makeyesno () {
-    echo -n "$1 "
+    echo_n "$1 "
     if makeenv "testing $3:" -f mk/test.mk test/$3; then
         echo yes
     else
@@ -224,7 +229,7 @@ makeyesno () {
 }
 
 makeselect () {
-    echo -n "$1 "; fail=$2; var=$3; test=$4; shift 4
+    echo_n "$1 "; fail=$2; var=$3; test=$4; shift 4
     while [ $# != 0 ]; do
         eval $var=\'$1\'
         if makeenv "testing $test with $var='$1':" -f mk/test.mk test/"$test"
@@ -251,7 +256,7 @@ makeselect () {
 # Configure compilers
 #
 
-echo -n "looking for C compiler... "
+echo_n "looking for C compiler... "
 CC_selected=$CC
 if [ -n "$CC" ]; then
     echo "$CC (selected)"
@@ -294,7 +299,7 @@ makeselect "selecting C floating-point options..." \
            -ffloat-store
 
 
-echo -n "looking for C compiler for build-time programs..."
+echo_n "looking for C compiler for build-time programs..."
 if [ -n "$XCC" ]; then
     echo "$XCC (selected)"
 elif [ -z "${KXARCH##w*}" ]; then
@@ -321,7 +326,7 @@ makeyesno "checking if build-time C compiler output runs..." \
           xc_run
 
 
-echo -n "looking for Fortran compiler... "
+echo_n "looking for Fortran compiler... "
 if [ -n "$FC" ]; then
     echo "$FC (selected)"
 elif [ -n "$CC_selected" ] && [ -z "${CC_selected%%*gcc*}" ]; then
@@ -358,7 +363,7 @@ makeselect "selecting Fortran thread safety options..." \
 
 
 # nm required below
-echo -n "looking for binutils... "
+echo_n "looking for binutils... "
 if [ -n "${TOOLPREFIX+n}" ]; then
     echo "${TOOLPREFIX}ar (selected)"
 elif [ -n "$CC_selected" ] && [ -z "${CC_selected%%*-gcc*}" ]; then
@@ -461,7 +466,7 @@ makeselect "looking for http downloader..." \
            FETCH fetch \
            curl wget manual
 
-echo -n "phoning home... "
+echo_n "phoning home... "
 echo "just kidding"
 
 makeselect "looking for sha256..." \
