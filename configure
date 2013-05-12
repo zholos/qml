@@ -104,10 +104,10 @@ else
             Darwin:x86_64)              KXARCH=m64 ;;
             Darwin:*)                   KXARCH=m32 ;;
             SunOS:*) case "$(quiet isainfo):$(quiet isainfo -b)" in
-                       i386:64) KXARCH=v64 ;;
-                       i386:32) KXARCH=v32 ;;
-                       *:64)    KXARCH=s64 ;;
-                       *:32)    KXARCH=s32 ;;
+                       *i386*:64) KXARCH=v64 ;;
+                       *i386*:32) KXARCH=v32 ;;
+                       *:64)      KXARCH=s64 ;;
+                       *:32)      KXARCH=s32 ;;
                    esac ;;
         esac
         if [ -n "$KXARCH" ]; then
