@@ -1,6 +1,6 @@
 include $(dir $(lastword $(MAKEFILE_LIST)))common.mk
 
-VERSION := 0.4-$(shell date +%Y%m%d)
+VERSION := 0.4
 
 OBJS := const.o libm.o cephes.o lapack.o conmax.o alloc.o util.o opt.o
 INCLUDES := alloc.h util.h opt.h wrap.h
