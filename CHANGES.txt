@@ -1,0 +1,102 @@
+Version 0.4 on 2013-05-12:
+  * Added support for kdb+ 3.0.
+  * Added option to link with external BLAS and LAPACK libraries.
+  * Removed support for building ATLAS. Reference BLAS and LAPACK can be built
+    using the --build-blas and --build-lapack configure options.
+  * Build with
+      ./configure && make
+  * Test with
+      make test
+  * Install with
+      make install
+    This copies qml.so to the q binary directory, because qml.q no longer
+    searches for it in the current working directory.
+  * Added 'mdim' function.
+
+Version 0.3.10 on 2011-07-13:
+  * Replaced ATLAS-specific calls with Fortran interface calls in preparation
+    for allowing linking with external BLAS and LAPACK libraries.
+
+Version 0.3.9 on 2011-07-11:
+  * Updated to ATLAS 3.9.46.
+  * Added 'make check' target to run tests for individual libraries (ATLAS).
+
+Version 0.3.8 on 2011-07-08:
+  * Fixed patching process on Darwin: some sed scripts were not portable.
+  * Limited static linking of Fortran test programs to Cygwin, as it was
+    failing on some other platforms.
+
+Version 0.3.7 on 2011-07-04:
+  * Fixed building of ATLAS on 64-bit Windows.
+  * Prevented invalid read in CONMAX on NaN input.
+
+Version 0.3.6 on 2011-06-30:
+  * Fixed building of ATLAS on 64-bit Linux.
+
+Version 0.3.5 on 2011-06-28:
+  * Added 'mls'/'mlsx' and 'mlsq'/'mlsqx' functions.
+  * A matrix of null values is now returned instead of an empty list in case of
+    singular input to 'minv' and 'ms', non-positive-definite input to 'mchol',
+    and computation failure in 'mev' and 'msvd'.
+
+Version 0.3.4 on 2011-06-26:
+  * The system libm is used instead of FDLIBM.
+  * ATLAS is now the default and only option. CLAPACK is replaced with Fortran
+    LAPACK. A Fortran compiler is required to build.
+  * Two-argument scalar functions are now only threaded over a vector in the
+    second argument, but not in the first, except 'atan2', 'pow', 'fmod',
+    'hypot' and 'beta', which are threaded over both arguments. Three-argument
+    functions are now threaded over a vector in the third argument.
+  * Coefficients supplied to 'poly' must be either atoms or two-element vectors
+    representing complex numbers. One-element vectors are not accepted.
+  * Bytes (type "x") are no longer accepted for any numeric arguments.
+
+Version 0.3.3 on 2011-06-13:
+  * Added 'mm' and 'ms' functions.
+
+Version 0.3.2 on 2011-06-04:
+  * When compiling with ATLAS, use the provided optimized LAPACK routines and
+    parameters.
+
+Version 0.3.1 on 2011-06-01:
+  * Removed support for alternative build profiles and for compiling using
+    Windows SDK.
+  * Added option to compile with ATLAS instead of reference BLAS, improving
+    LAPACK performance.
+
+Version 0.2.1 on 2010-02-17:
+  * Added 'root'/'rootx', 'solve'/'solvex', 'line'/'linex', 'min'/'minx' and
+   'conmin'/'conminx' nonlinear optimization functions.
+
+Version 0.1.8 on 2009-10-25:
+  * Old 'mdiag' function renamed to 'diag', which creates a diagonal matrix.
+    New 'mdiag' function added to extract the main diagonal from a matrix.
+    The intended convention is that "m" functions operate on matrixes.
+  * Added 'mqrp' and 'mrank' matrix functions.
+  * Added 'bncdf', 'bnicdf', 'pscdf', 'psicdf', 'smcdf', 'smicdf', 'kcdf' and
+   'kicdf' probability functions.
+
+Version 0.1.7 on 2009-10-13:
+  * Support building with GCC 3 on Linux.
+  * Support building on 64-bit OpenSolaris (x86).
+
+Version 0.1.6 on 2009-10-12:
+  * Fixed integer argument size in LAPACK calls on 64-bit Linux, OpenSolaris
+    and Darwin.
+  * Added 'mqr' and 'mlup' functions.
+
+Version 0.1.5 on 2009-10-06:
+  * Preliminary support for OpenSolaris.
+
+Version 0.1.4 on 2009-10-05:
+  * Fixed thread safety, which is required for 'peach'.
+
+Version 0.1.3 on 2009-10-01:
+  * When calling LAPACK, query and allocate optimal workspace.
+  * Support Darwin.
+
+Version 0.1.2 on 2009-09-25:
+  * Support GCC on Windows.
+
+Version 0.1.1 on 2009-09-10:
+    First release.
