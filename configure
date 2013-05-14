@@ -67,7 +67,8 @@ for arg in "$@"; do
          --build-lapack)  BUILD_LAPACK=1           ;;
         --with-lapack=*)   WITH_LAPACK="${arg#*=}" ;;
               -h|--help) usage; exit 0 ;;
-                      *) echo "unknown configure option $1" >&2; exit 1 ;;
+                      *) echo "unknown configure option $1, try --help" >&2
+                         exit 1 ;;
     esac
 done
 
