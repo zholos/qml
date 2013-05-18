@@ -2,8 +2,8 @@ include $(dir $(lastword $(MAKEFILE_LIST)))common.mk
 
 VERSION := 0.4-$(shell date +%Y%m%d)
 
-OBJS := const.o libm.o cephes.o lapack.o conmax.o alloc.o util.o opt.o
-INCLUDES := alloc.h util.h opt.h wrap.h
+OBJS := const.o libm.o cephes.o lapack.o conmin.o conmax.o alloc.o util.o opt.o
+INCLUDES := alloc.h util.h opt.h wrap.h conmin.h conmax.h
 
 CFLAGS += -std=gnu99 -Wall -Wextra -Wno-missing-field-initializers
 DEFINES = -DQML_VERSION=$(VERSION) -DKXARCH=$(KXARCH) -DKXVER=$(KXVER)
