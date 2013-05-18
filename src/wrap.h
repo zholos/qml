@@ -1,5 +1,5 @@
-#ifndef WRAP_H
-#define WRAP_H
+#ifndef QML_SRC_WRAP_H
+#define QML_SRC_WRAP_H
 
 #include "util.h"
 
@@ -109,4 +109,4 @@ qml_##name(K x, K y, K z) {                          \
 }
 
 
-#endif // WRAP_H
+#endif // QML_SRC_WRAP_H

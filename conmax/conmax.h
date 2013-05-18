@@ -1,5 +1,5 @@
-#ifndef CONMAX_H
-#define CONMAX_H
+#ifndef QML_PKG_CONMAX_H
+#define QML_PKG_CONMAX_H
 
 int conmax_(int* ioptn, int* nparm, int* numgr, int* itlim,
             double* fun, int* ifun, double* pttbl,

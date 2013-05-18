@@ -1,5 +1,5 @@
-#ifndef CPROB_H
-#define CPROB_H
+#ifndef QML_PKG_CPROB_H
+#define QML_PKG_CPROB_H
 
 double igam(double, double);
 double igamc(double, double);

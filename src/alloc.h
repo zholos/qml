@@ -1,5 +1,5 @@
-#ifndef ALLOC_H
-#define ALLOC_H
+#ifndef QML_SRC_ALLOC_H
+#define QML_SRC_ALLOC_H
 
 #include "util.h"
 
@@ -23,4 +23,4 @@ add_size(I a, I m, I n) {
 }
 
 
-#endif // ALLOC_H
+#endif // QML_SRC_ALLOC_H

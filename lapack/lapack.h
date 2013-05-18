@@ -1,5 +1,5 @@
-#ifndef LAPACK_H
-#define LAPACK_H
+#ifndef QML_PKG_LAPACK_H
+#define QML_PKG_LAPACK_H
 
 // Fortran BLAS prototypes
 int dgemv_(char* trans, int* m, int* n,

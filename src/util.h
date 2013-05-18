@@ -1,5 +1,5 @@
-#ifndef UTIL_H
-#define UTIL_H
+#ifndef QML_SRC_UTIL_H
+#define QML_SRC_UTIL_H
 
 #include <stdlib.h>
 
@@ -123,4 +123,4 @@ check_err(K x, S err) {
 }
 
 
-#endif // UTIL_H
+#endif // QML_SRC_UTIL_H
