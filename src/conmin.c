@@ -69,14 +69,14 @@ struct k0 empty_con_ = { 0 };
 
 
 static const struct optn solve_opt[] = {
-    { "iter",   -KI },
-    { "tol",    -KF },
-    { "steps",  -KI },
-    { "slp",      0 },
-    { "rk",       0 },
-    { "full",     0 },
-    { "quiet",    0 },
-    { NULL }
+    [0] = { "iter",   -KI },
+    [1] = { "tol",    -KF },
+    [2] = { "steps",  -KI },
+    [3] = { "slp",      0 },
+    [4] = { "rk",       0 },
+    [5] = { "full",     0 },
+    [6] = { "quiet",    0 },
+          { NULL }
 };
 
 K
@@ -114,15 +114,15 @@ qml_min(K x, K y)
 }
 
 static const struct optn conmin_opt[] = {
-    { "iter",   -KI },
-    { "tol",    -KF },
-    { "steps",  -KI },
-    { "slp",      0 },
-    { "rk",       0 },
-    { "lincon",   0 },
-    { "full",     0 },
-    { "quiet",    0 },
-    { NULL }
+    [0] = { "iter",   -KI },
+    [1] = { "tol",    -KF },
+    [2] = { "steps",  -KI },
+    [3] = { "slp",      0 },
+    [4] = { "rk",       0 },
+    [5] = { "lincon",   0 },
+    [6] = { "full",     0 },
+    [7] = { "quiet",    0 },
+          { NULL }
 };
 
 K
@@ -143,11 +143,11 @@ qml_conmin(K x, K y, K z)
 }
 
 static const struct optn rootline_opt[] = {
-    { "iter", -KI },
-    { "tol",  -KF },
-    { "full",   0 },
-    { "quiet",  0 },
-    { NULL }
+    [0] = { "iter", -KI },
+    [1] = { "tol",  -KF },
+    [2] = { "full",   0 },
+    [3] = { "quiet",  0 },
+          { NULL }
 };
 
 K
