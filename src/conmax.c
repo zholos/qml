@@ -29,6 +29,7 @@ struct fnset_info {
     K fun, con, start;
     I contyp;
     int neg;
+    int con_neg;
     K error;
 };
 
@@ -90,7 +91,7 @@ fnset_(I* nparm, I* numgr, F* pttbl, F* param,
         }
     else { // root or solve
         f = qt(info->con) ? info->con : qK(info->con, *ipt-1);
-        neg = info->neg;
+        neg = info->con_neg;
         *icntyp = 2;
     }
 
@@ -173,7 +174,7 @@ solvemin(K fun, K con, K start_, I maxiter, F tolcon, I steps,
     info.con = con;
     info.start = start;
     info.contyp = lincon ? -1 : -2;
-    info.neg = 0;
+    info.con_neg = 0;
     info.error = no_error;
 
     // not safe to make the call in case of error because some arrays have an
@@ -299,7 +300,7 @@ root(K fun, K start, I maxiter, F tolcon, int full, int quiet)
     info.con = fun;
     info.start = NULL; // root/line flag
     info.contyp = -2;
-    info.neg = 0;
+    info.con_neg = 0;
     info.error = no_error;
 
     F f1 = fnset_call(&info, fun, 0, &p1);
@@ -313,7 +314,7 @@ root(K fun, K start, I maxiter, F tolcon, int full, int quiet)
     if (f1 < -tolcon && f2 > tolcon) {
         f1 = -f1;
         f2 = -f2;
-        info.neg = 1;
+        info.con_neg = 1;
     }
     int sig_sign = !(f1 > tolcon && f2 < -tolcon);
 
