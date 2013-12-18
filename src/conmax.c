@@ -21,29 +21,34 @@ d1mach_(int* i) {
 }
 
 
+struct call_info {
+    int arg; // 0 = make_param(start), 1/-1 = base+arg*scalar
+    F base;
+    K start;
+    K error;
+} call;
+
 // The first member must be of the same type as pttbl. This allows casting a
 // structure pointer to a first-member pointer, passing it through CONMAX, and
 // casting it back to get the original pointer in a well-defined manner.
+
 struct fnset_info {
-    F base; /* first member */
-    K fun, con, start;
+    F first_member;
+    struct call_info call;
+    K fun, con;
     I contyp;
-    int neg;
     int con_neg;
-    K error;
 };
 
 static F
-fnset_call(struct fnset_info* info, K f, int neg, F* param)
+fnset_call(struct call_info* info, K f, int neg, F* param)
 {
     if (info->error != no_error)
         return 0;
 
     K a;
-    if (!info->start && info->fun) // line
-        a = knk(1, kf(info->base + (info->neg ? -*param : *param)));
-    else if (!info->start || info->start->t == -KF) // root, or scalar param
-        a = knk(1, kf(*param));
+    if (info->arg)
+        a = knk(1, kf(info->base + info->arg * *param));
     else
         make_param(info->start, param, &a);
 
@@ -95,29 +100,30 @@ fnset_(I* nparm, I* numgr, F* pttbl, F* param,
         *icntyp = 2;
     }
 
-    F v = *confun = fnset_call(info, f, neg, param);
+    F v = *confun = fnset_call(&info->call, f, neg, param);
     if (*indfn) {
         I m = *numgr, n = *nparm;
         if (*icntyp == -1) // linear function
             repeat (i, n) {
                 F p = param[i];
                 param[i] = p + 1;
-                *(confun += m) = fnset_call(info, f, neg, param) - v;
+                *(confun += m) = fnset_call(&info->call, f, neg, param) - v;
                 param[i] = p;
             }
         else { // nonlinear function
             F h = sqrt(DBL_EPSILON / FLT_RADIX);
             repeat (i, n) {
-                F p = param[i], p1, p2, v1, v2;
-                param[i] = p1 = p + h; v1 = fnset_call(info, f, neg, param);
-                param[i] = p2 = p - h; v2 = fnset_call(info, f, neg, param);
+                F p = param[i], p1 = p + h, p2 = p - h, v1, v2;
+                param[i] = p1; v1 = fnset_call(&info->call, f, neg, param);
+                param[i] = p2; v2 = fnset_call(&info->call, f, neg, param);
                 *(confun += m) = (v1 - v2) / (p1 - p2);
                 param[i] = p;
             }
         }
     }
 
-    if (info->error != no_error) // deactivate all constraints to exit sooner
+    // deactivate all constraints to exit sooner
+    if (info->call.error != no_error)
         *icntyp = 0;
 
     return 0;
@@ -170,17 +176,19 @@ solvemin(K fun, K con, K start_, I maxiter, F tolcon, I steps,
     I* iwork = alloc_I(&liwrk, &err);
 
     struct fnset_info info;
+    info.call.arg = qt(start) == -KF ? 1 : 0;
+    info.call.base = 0;
+    info.call.start = start;
+    info.call.error = no_error;
     info.fun = fun;
     info.con = con;
-    info.start = start;
     info.contyp = lincon ? -1 : -2;
     info.con_neg = 0;
-    info.error = no_error;
 
     // not safe to make the call in case of error because some arrays have an
     // assumed minimum size
     if (err) {
-        info.error = krr(err);
+        info.call.error = krr(err);
         goto skip_call;
     }
 
@@ -205,7 +213,7 @@ skip_call:
     free_F(vfun);
 
     // either err was set above, or error in user function
-    if (info.error != no_error)
+    if (info.call.error != no_error)
         goto skip_result;
 
     S sig = NULL; // different from err, may be returned instead of raised
@@ -221,11 +229,11 @@ skip_call:
                 sig = "nan";
 
     if (!quiet && sig) {
-        info.error = krr(sig);
+        info.call.error = krr(sig);
         goto skip_result;
     }
 
-    assert(info.error == no_error);
+    assert(info.call.error == no_error);
 
     K x, last;
     if (sig) {
@@ -274,8 +282,8 @@ skip_result:
     free_F(param);
     q0(start);
 
-    if (info.error != no_error)
-        return info.error;
+    if (info.call.error != no_error)
+        return info.call.error;
     return x;
 }
 
@@ -296,16 +304,17 @@ root(K fun, K start, I maxiter, F tolcon, int full, int quiet)
         swap_f(&p1, &p2);
 
     struct fnset_info info;
+    info.call.arg = 1;
+    info.call.base = 0;
+    info.call.error = no_error;
     info.fun = NULL; // root/solve flag
     info.con = fun;
-    info.start = NULL; // root/line flag
     info.contyp = -2;
     info.con_neg = 0;
-    info.error = no_error;
 
-    F f1 = fnset_call(&info, fun, 0, &p1);
-    F f2 = fnset_call(&info, fun, 0, &p2);
-    // info.error possibly set
+    F f1 = fnset_call(&info.call, fun, 0, &p1);
+    F f2 = fnset_call(&info.call, fun, 0, &p2);
+    // info.call.error possibly set
 
     if (maxiter < 0)
         maxiter = 0;
@@ -327,8 +336,8 @@ root(K fun, K start, I maxiter, F tolcon, int full, int quiet)
             (F*)&info, &zwork, &tolcon, &iphse, iwork, &liwrk, work, &lwrk,
             &parwrk, err1, &p1, &f1, &p2, &f2);
 
-    if (info.error != no_error)
-        return info.error;
+    if (info.call.error != no_error)
+        return info.call.error;
 
     S sig = NULL;
     if (nsrch >= maxiter)
@@ -370,17 +379,16 @@ line(K fun, K base, K start, I maxiter, F tolcon, int full, int quiet)
         return krr("type");
 
     struct fnset_info info;
-    info.base = convert_f(base);
+    info.call.arg = 1;
+    info.call.base = convert_f(base);
+    info.call.error = no_error;
     info.fun = fun;
     info.con = fun; // min/line flag
-    info.start = NULL; // root/line flag
-    info.neg = 0;
-    info.error = no_error;
 
-    F projct = convert_f(start) - info.base;
+    F projct = convert_f(start) - info.call.base;
     if (projct < 0) {
         projct = -projct;
-        info.neg = 1;
+        info.call.arg = -1;
     }
 
     // Call sequence based on sample driver from conmax.f
@@ -410,8 +418,8 @@ line(K fun, K base, K start, I maxiter, F tolcon, int full, int quiet)
             iwork, &liwrk, work, &lwrk, err1, &parprj, &projct,
             &emin, &emin1, &parser, &nsrch);
 
-    if (info.error != no_error)
-        return info.error;
+    if (info.call.error != no_error)
+        return info.call.error;
 
     S sig = NULL;
     if (nsrch >= maxiter || nsrch >= lims1)
@@ -422,7 +430,7 @@ line(K fun, K base, K start, I maxiter, F tolcon, int full, int quiet)
     if (!quiet && sig)
         return krr(sig);
 
-    projct = info.base + (info.neg ? -projct : projct);
+    projct = info.call.base + info.call.arg * projct;
     K x = sig ? kf(nf) : kf(projct);
     if (full) {
         //        normal     error
