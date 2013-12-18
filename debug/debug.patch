@@ -10,10 +10,10 @@
          `atan2`pow`hypot`fmod`beta`pgammar`pgammarc`ipgammarc`c2cdf`c2icdf,
              `stcdf`sticdf`pscdf`psicdf`smcdf`smicdf`mm`ms`mls`mlsq,
              `solve`min`root;
-@@ -28,3 +29,5 @@
- mpinv:{mm[x 2] flip mm[x 0]
+@@ -29,3 +30,5 @@
      ?'[(s=0)|s<eps*s[0;0]*max mdim s;s;reciprocal s:(x:msvd x)1]};
  mev:{x@\:idesc sum each {x*x} first x:mevu x};
+ mkron:{raze(raze'')(flip')x*\:\:y};
 +
 +debug_coverage[];
 --- test.q

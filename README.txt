@@ -156,6 +156,7 @@ Constants and functions
   mlup[matrix]    LUP factorization with row pivoting:
                     (L; U; P), matrix[P]=L mm U
   msvd[matrix]    singular value decomposition: (U; Sigma; V)
+  mkron[A;B]      Kronecker product
 
   poly[coef]      roots of a polynomial (highest-degree coefficient first,
                     can be complex)
