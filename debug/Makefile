@@ -5,7 +5,7 @@ build: .q_files
 $(call copy_src,../src)
 
 CFLAGS += -O0 -Wno-parentheses
-CFLAGS += -ggdb -ftrapv
+FLAGS += -ggdb -ftrapv
 DEFINES += -DDEBUG
 
 .q_files: debug.patch ../src/qml.q ../src/test.q
@@ -17,7 +17,7 @@ DEFINES += -DDEBUG
 
 valgrind: all
 	valgrind --suppressions=q.supp --leak-check=full --show-reachable=yes \
-	    --trace-children=yes q test.q
+	    --trace-children=yes q test.q -cd
 
 clean_misc:
 	rm -f qml.q qml.q.orig test.q test.q.orig .q_files
