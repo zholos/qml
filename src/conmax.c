@@ -37,11 +37,11 @@ struct fnset_info {
     struct call_info call;
     K fun, con;
     I contyp;
-    int con_neg;
+    int con_sign;
 };
 
 static F
-fnset_call(struct call_info* info, K f, int neg, F* param)
+fnset_call(struct call_info* info, int sign, K f, F* param)
 {
     if (info->error != no_error)
         return 0;
@@ -59,7 +59,7 @@ fnset_call(struct call_info* info, K f, int neg, F* param)
         q0(x);
         if (isnan(v)) // protect optimization routines from NaNs
             return wf; // this is -wf for ">=" constraints
-        return neg ? -v : v;
+        return sign * v;
     }
 
     // function didn't return a float as we'd hoped
@@ -82,40 +82,40 @@ fnset_(I* nparm, I* numgr, F* pttbl, F* param,
     confun += *ipt - 1;
 
     K f;
-    int neg;
+    int sign;
     assert(callable(info->con) || qt(info->con) == 0);
     if (info->fun) // line, min or conmin
         if (*ipt == 1) { // objective function
             f = info->fun;
-            neg = 0;
+            sign = 1;
             *icntyp = 1;
         } else { // constraints
             f = qt(info->con) ? info->con : qK(info->con, *ipt-2);
-            neg = 1;
+            sign = -1;
             *icntyp = info->contyp;
         }
     else { // root or solve
         f = qt(info->con) ? info->con : qK(info->con, *ipt-1);
-        neg = info->con_neg;
+        sign = info->con_sign;
         *icntyp = 2;
     }
 
-    F v = *confun = fnset_call(&info->call, f, neg, param);
+    F v = *confun = fnset_call(&info->call, sign, f, param);
     if (*indfn) {
         I m = *numgr, n = *nparm;
         if (*icntyp == -1) // linear function
             repeat (i, n) {
                 F p = param[i];
                 param[i] = p + 1;
-                *(confun += m) = fnset_call(&info->call, f, neg, param) - v;
+                *(confun += m) = fnset_call(&info->call, sign, f, param) - v;
                 param[i] = p;
             }
         else { // nonlinear function
             F h = sqrt(DBL_EPSILON / FLT_RADIX);
             repeat (i, n) {
                 F p = param[i], p1 = p + h, p2 = p - h, v1, v2;
-                param[i] = p1; v1 = fnset_call(&info->call, f, neg, param);
-                param[i] = p2; v2 = fnset_call(&info->call, f, neg, param);
+                param[i] = p1; v1 = fnset_call(&info->call, sign, f, param);
+                param[i] = p2; v2 = fnset_call(&info->call, sign, f, param);
                 *(confun += m) = (v1 - v2) / (p1 - p2);
                 param[i] = p;
             }
@@ -183,7 +183,7 @@ solvemin(K fun, K con, K start_, I maxiter, F tolcon, I steps,
     info.fun = fun;
     info.con = con;
     info.contyp = lincon ? -1 : -2;
-    info.con_neg = 0;
+    info.con_sign = 1;
 
     // not safe to make the call in case of error because some arrays have an
     // assumed minimum size
@@ -310,10 +310,10 @@ root(K fun, K start, I maxiter, F tolcon, int full, int quiet)
     info.fun = NULL; // root/solve flag
     info.con = fun;
     info.contyp = -2;
-    info.con_neg = 0;
+    info.con_sign = 1;
 
-    F f1 = fnset_call(&info.call, fun, 0, &p1);
-    F f2 = fnset_call(&info.call, fun, 0, &p2);
+    F f1 = fnset_call(&info.call, 1, fun, &p1);
+    F f2 = fnset_call(&info.call, 1, fun, &p2);
     // info.call.error possibly set
 
     if (maxiter < 0)
@@ -323,7 +323,7 @@ root(K fun, K start, I maxiter, F tolcon, int full, int quiet)
     if (f1 < -tolcon && f2 > tolcon) {
         f1 = -f1;
         f2 = -f2;
-        info.con_neg = 1;
+        info.con_sign = -1;
     }
     int sig_sign = !(f1 > tolcon && f2 < -tolcon);
 
