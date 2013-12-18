@@ -21,13 +21,6 @@ d1mach_(int* i) {
 }
 
 
-struct call_info {
-    int arg; // 0 = make_param(start), 1/-1 = base+arg*scalar
-    F base;
-    K start;
-    K error;
-} call;
-
 // The first member must be of the same type as pttbl. This allows casting a
 // structure pointer to a first-member pointer, passing it through CONMAX, and
 // casting it back to get the original pointer in a well-defined manner.
@@ -39,38 +32,6 @@ struct fnset_info {
     I contyp;
     int con_sign;
 };
-
-static F
-fnset_call(struct call_info* info, int sign, K f, F* param)
-{
-    if (info->error != no_error)
-        return 0;
-
-    K a;
-    if (info->arg)
-        a = knk(1, kf(info->base + info->arg * *param));
-    else
-        make_param(info->start, param, &a);
-
-    K x = dot(f, a);
-    q0(a);
-    if (x && compatible_f(x)) {
-        F v = convert_f(x);
-        q0(x);
-        if (isnan(v)) // protect optimization routines from NaNs
-            return wf; // this is -wf for ">=" constraints
-        return sign * v;
-    }
-
-    // function didn't return a float as we'd hoped
-    if (!x || qt(x) == -128)
-        info->error = x;
-    else {
-        info->error = krr(callable(x) ? "rank" : "type");
-        q0(x);
-    }
-    return 0;
-}
 
 int
 fnset_(I* nparm, I* numgr, F* pttbl, F* param,
@@ -100,22 +61,22 @@ fnset_(I* nparm, I* numgr, F* pttbl, F* param,
         *icntyp = 2;
     }
 
-    F v = *confun = fnset_call(&info->call, sign, f, param);
+    F v = *confun = call_param(&info->call, sign, f, param);
     if (*indfn) {
         I m = *numgr, n = *nparm;
         if (*icntyp == -1) // linear function
             repeat (i, n) {
                 F p = param[i];
                 param[i] = p + 1;
-                *(confun += m) = fnset_call(&info->call, sign, f, param) - v;
+                *(confun += m) = call_param(&info->call, sign, f, param) - v;
                 param[i] = p;
             }
         else { // nonlinear function
             F h = sqrt(DBL_EPSILON / FLT_RADIX);
             repeat (i, n) {
                 F p = param[i], p1 = p + h, p2 = p - h, v1, v2;
-                param[i] = p1; v1 = fnset_call(&info->call, sign, f, param);
-                param[i] = p2; v2 = fnset_call(&info->call, sign, f, param);
+                param[i] = p1; v1 = call_param(&info->call, sign, f, param);
+                param[i] = p2; v2 = call_param(&info->call, sign, f, param);
                 *(confun += m) = (v1 - v2) / (p1 - p2);
                 param[i] = p;
             }
@@ -312,8 +273,8 @@ root(K fun, K start, I maxiter, F tolcon, int full, int quiet)
     info.contyp = -2;
     info.con_sign = 1;
 
-    F f1 = fnset_call(&info.call, 1, fun, &p1);
-    F f2 = fnset_call(&info.call, 1, fun, &p2);
+    F f1 = call_param(&info.call, 1, fun, &p1);
+    F f2 = call_param(&info.call, 1, fun, &p2);
     // info.call.error possibly set
 
     if (maxiter < 0)

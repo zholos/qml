@@ -1,3 +1,4 @@
+#include <math.h>
 #include <string.h>
 
 #include "conmin.h"
@@ -59,6 +60,39 @@ make_param(K x, F* param, K* r) {
         assert(0);
     }
     return param;
+}
+
+
+F
+call_param(struct call_info* info, int sign, K f, F* param)
+{
+    if (info->error != no_error)
+        return 0;
+
+    K a;
+    if (info->arg)
+        a = knk(1, kf(info->base + info->arg * *param));
+    else
+        make_param(info->start, param, &a);
+
+    K x = dot(f, a);
+    q0(a);
+    if (x && compatible_f(x)) {
+        F v = convert_f(x);
+        q0(x);
+        if (isnan(v)) // protect optimization routines from NaNs
+            return wf; // this is -wf for ">=" constraints
+        return sign * v;
+    }
+
+    // function didn't return a float as we'd hoped
+    if (!x || qt(x) == -128)
+        info->error = x;
+    else {
+        info->error = krr(callable(x) ? "rank" : "type");
+        q0(x);
+    }
+    return 0;
 }
 
 

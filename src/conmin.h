@@ -6,6 +6,15 @@
 F* take_param(K x, I* n, S* err);
 F* make_param(K x, F* param, K* r);
 
+struct call_info {
+    int arg; // 0 = make_param(start), 1/-1 = base+arg*scalar
+    F base;
+    K start;
+    K error;
+} call;
+
+F call_param(struct call_info* info, int sign, K f, F* param);
+
 
 // krr() might return NULL or an error object.
 // This dummy object represents no error.
