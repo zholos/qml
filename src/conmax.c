@@ -25,7 +25,7 @@ d1mach_(int* i) {
 // structure pointer to a first-member pointer, passing it through CONMAX, and
 // casting it back to get the original pointer in a well-defined manner.
 
-struct fnset_info {
+struct eval_info {
     F first_member;
     struct call_info call;
     K fun, con;
@@ -33,42 +33,37 @@ struct fnset_info {
     int con_sign;
 };
 
-int
-fnset_(I* nparm, I* numgr, F* pttbl, F* param,
-       I* ipt, I* indfn, I* icntyp, F* confun)
+F
+eval_param(struct eval_info* info,
+           I which, F* param, I n, F* grad, int grad_step, I* contyp)
 {
-    struct fnset_info* info = (struct fnset_info*)pttbl;
-
-    icntyp += *ipt - 1;
-    confun += *ipt - 1;
-
     K f;
     int sign;
     assert(callable(info->con) || qt(info->con) == 0);
     if (info->fun) // line, min or conmin
-        if (*ipt == 1) { // objective function
+        if (which == 0) { // objective function
             f = info->fun;
             sign = 1;
-            *icntyp = 1;
+            *contyp = 1;
         } else { // constraints
-            f = qt(info->con) ? info->con : qK(info->con, *ipt-2);
+            f = qt(info->con) ? info->con : qK(info->con, which-1);
             sign = -1;
-            *icntyp = info->contyp;
+            *contyp = info->contyp;
         }
     else { // root or solve
-        f = qt(info->con) ? info->con : qK(info->con, *ipt-1);
+        f = qt(info->con) ? info->con : qK(info->con, which);
         sign = info->con_sign;
-        *icntyp = 2;
+        *contyp = 2;
     }
 
-    F v = *confun = call_param(&info->call, sign, f, param);
-    if (*indfn) {
-        I m = *numgr, n = *nparm;
-        if (*icntyp == -1) // linear function
+    F v = call_param(&info->call, sign, f, param);
+    if (grad) {
+        if (*contyp == -1) // linear function
             repeat (i, n) {
                 F p = param[i];
                 param[i] = p + 1;
-                *(confun += m) = call_param(&info->call, sign, f, param) - v;
+                *grad = call_param(&info->call, sign, f, param) - v;
+                grad += grad_step;
                 param[i] = p;
             }
         else { // nonlinear function
@@ -77,7 +72,8 @@ fnset_(I* nparm, I* numgr, F* pttbl, F* param,
                 F p = param[i], p1 = p + h, p2 = p - h, v1, v2;
                 param[i] = p1; v1 = call_param(&info->call, sign, f, param);
                 param[i] = p2; v2 = call_param(&info->call, sign, f, param);
-                *(confun += m) = (v1 - v2) / (p1 - p2);
+                *grad = (v1 - v2) / (p1 - p2);
+                grad += grad_step;
                 param[i] = p;
             }
         }
@@ -85,11 +81,24 @@ fnset_(I* nparm, I* numgr, F* pttbl, F* param,
 
     // deactivate all constraints to exit sooner
     if (info->call.error != no_error)
-        *icntyp = 0;
+        *contyp = 0;
 
-    return 0;
+    return v;
 }
 
+
+int
+fnset_(I* nparm, I* numgr, F* pttbl, F* param,
+       I* ipt, I* indfn, I* icntyp, F* confun)
+{
+    I which = *ipt - 1;
+    confun += which;
+    *confun = eval_param((struct eval_info*)pttbl,
+                         which, param, *nparm,
+                         *indfn ? confun + *numgr : NULL, *numgr,
+                         icntyp + which);
+    return 0;
+}
 
 
 K
@@ -136,7 +145,7 @@ solvemin(K fun, K con, K start_, I maxiter, F tolcon, I steps,
     I liwrk = add_size(add_size(3, nparm, 7), numgr, 7);
     I* iwork = alloc_I(&liwrk, &err);
 
-    struct fnset_info info;
+    struct eval_info info;
     info.call.arg = qt(start) == -KF ? 1 : 0;
     info.call.base = 0;
     info.call.start = start;
@@ -264,7 +273,7 @@ root(K fun, K start, I maxiter, F tolcon, int full, int quiet)
     if (p1 > p2)
         swap_f(&p1, &p2);
 
-    struct fnset_info info;
+    struct eval_info info;
     info.call.arg = 1;
     info.call.base = 0;
     info.call.error = no_error;
@@ -339,7 +348,7 @@ line(K fun, K base, K start, I maxiter, F tolcon, int full, int quiet)
     if (!callable(fun) || !compatible_f(base) || !compatible_f(start))
         return krr("type");
 
-    struct fnset_info info;
+    struct eval_info info;
     info.call.arg = 1;
     info.call.base = convert_f(base);
     info.call.error = no_error;
