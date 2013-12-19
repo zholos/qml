@@ -97,7 +97,8 @@ solvemin(K fun, K con, K start_, I maxiter, F tolcon, I steps,
     }
 
     I ioptn = 200;
-    I itlim = max_i(0, maxiter);
+    if (maxiter < 0)
+        maxiter = 1000; // option default
     if (!(tolcon >= 0))
         tolcon = sqrt(DBL_EPSILON / FLT_RADIX);
     work[1] = tolcon;
@@ -108,7 +109,7 @@ solvemin(K fun, K con, K start_, I maxiter, F tolcon, I steps,
     ioptn += slp ? 1000 : rk ? 2000 : 0;
 
     I iter;
-    conmax_(&ioptn, &nparm, &numgr, &itlim, vfun, &ifun, (F*)&info,
+    conmax_(&ioptn, &nparm, &numgr, &maxiter, vfun, &ifun, (F*)&info,
             iwork, &liwrk, work, &lwrk, &iter, param, error);
 
 skip_call:
@@ -221,7 +222,7 @@ root(K fun, K start, I maxiter, F tolcon, int full, int quiet)
     // info.call.error possibly set
 
     if (maxiter < 0)
-        maxiter = 0;
+        maxiter = 100; // option default
     if (!(tolcon >= 0))
         tolcon = sqrt(DBL_EPSILON / FLT_RADIX);
     if (f1 < -tolcon && f2 > tolcon) {
@@ -231,12 +232,12 @@ root(K fun, K start, I maxiter, F tolcon, int full, int quiet)
     }
     int sig_sign = !(f1 > tolcon && f2 < -tolcon);
 
-    I limmul = maxiter, nsrch, ioptn = 0, nparm = 1, numgr = 1, ifun = 1,
+    I nsrch, ioptn = 0, nparm = 1, numgr = 1, ifun = 1,
       iphse = 0, iwork[17], liwrk = 17, lwrk = 6;
     F dvec = 1, cfun = 0, zwork = 0, work[6], parwrk, err1[4];
     iwork[15] = -2;
 
-    muller_(&limmul, &nsrch, &ioptn, &nparm, &numgr, &dvec, &cfun, &ifun,
+    muller_(&maxiter, &nsrch, &ioptn, &nparm, &numgr, &dvec, &cfun, &ifun,
             (F*)&info, &zwork, &tolcon, &iphse, iwork, &liwrk, work, &lwrk,
             &parwrk, err1, &p1, &f1, &p2, &f2);
 
@@ -298,7 +299,7 @@ line(K fun, K base, K start, I maxiter, F tolcon, int full, int quiet)
     // Call sequence based on sample driver from conmax.f
 
     if (maxiter < 0)
-        maxiter = 0;
+        maxiter = 100; // option default
     if (!(tolcon >= 0))
         tolcon = sqrt(DBL_EPSILON / FLT_RADIX);
     F prjlim = wf;
@@ -306,7 +307,7 @@ line(K fun, K base, K start, I maxiter, F tolcon, int full, int quiet)
     if (tol1 > tolcon)
         tol1 = tolcon;
 
-    I initlm = maxiter, nadd = initlm, lims1 = initlm, ioptn = 0, numgr = 1,
+    I nadd = maxiter, lims1 = maxiter, ioptn = 0, numgr = 1,
       nparm = 1, ifun = 1, mact = 1, iact = 1, iphse = 0, itypm1 = 0,
       itypm2 = 0, iwork[17], liwrk = 17, lwrk = 42, nsrch;
     F cx[2], cfun = 0, param = 0, error[4], rchdwn = 2, unit = 1, rchin = 2,
@@ -314,7 +315,7 @@ line(K fun, K base, K start, I maxiter, F tolcon, int full, int quiet)
     cx[0] = 1;
     iwork[6] = 1;
 
-    searsl_(&initlm, &nadd, &lims1, &ioptn, &numgr, &nparm, &prjlim, &tol1, cx,
+    searsl_(&maxiter, &nadd, &lims1, &ioptn, &numgr, &nparm, &prjlim, &tol1, cx,
             &cfun, &ifun, (F*)&info,
             &param, error,
             &rchdwn, &mact, &iact, &iphse, &unit,

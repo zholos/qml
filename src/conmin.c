@@ -170,7 +170,7 @@ static const struct optn solve_opt[] = {
 K
 qml_solvex(K opts, K x, K y)
 {
-    union optv v[] = { { 1000 }, { .f = -1 }, { -1 },
+    union optv v[] = { { -1 }, { .f = -1 }, { -1 },
                        { 0 }, { 0 }, { 0 }, { 0 } };
     if (!take_opt(opts, solve_opt, v))
         return krr("opt");
@@ -184,12 +184,23 @@ qml_solve(K x, K y)
     return qml_solvex(empty_con, x, y);
 }
 
+static const struct optn min_opt[] = {
+    [0] = { "iter",   -KI },
+    [1] = { "tol",    -KF },
+    [2] = { "steps",  -KI },
+    [3] = { "slp",      0 },
+    [4] = { "rk",       0 },
+    [5] = { "full",     0 },
+    [6] = { "quiet",    0 },
+          { NULL }
+};
+
 K
 qml_minx(K opts, K x, K y)
 {
-    union optv v[] = { { 1000 }, { .f = -1 }, { -1 },
+    union optv v[] = { { -1 }, { .f = -1 }, { -1 },
                        { 0 }, { 0 }, { 0 }, { 0 } };
-    if (!take_opt(opts, solve_opt, v))
+    if (!take_opt(opts, min_opt, v))
         return krr("opt");
     return solvemin(x, empty_con, y, v[0].i, v[1].f, v[2].i,
                     v[3].i, v[4].i, 0, v[5].i, v[6].i);
@@ -216,7 +227,7 @@ static const struct optn conmin_opt[] = {
 K
 qml_conminx(K opts, K x, K y, K z)
 {
-    union optv v[] = { { 1000 }, { .f = -1 }, { -1 },
+    union optv v[] = { { -1 }, { .f = -1 }, { -1 },
                        { 0 }, { 0 }, { 0 }, { 0 }, { 0 } };
     if (!take_opt(opts, conmin_opt, v))
         return krr("opt");
@@ -241,7 +252,7 @@ static const struct optn rootline_opt[] = {
 K
 qml_rootx(K opts, K x, K y)
 {
-    union optv v[] = { { 100 }, { .f = -1 }, { 0 }, { 0 } };
+    union optv v[] = { { -1 }, { .f = -1 }, { 0 }, { 0 } };
     if (!take_opt(opts, rootline_opt, v))
         return krr("opt");
     return root(x, y, v[0].i, v[1].f, v[2].i, v[3].i);
@@ -255,7 +266,7 @@ qml_root(K x, K y)
 
 K
 qml_linex(K opts, K x, K y, K z) {
-    union optv v[] = { { 100 }, { .f = -1 }, { 0 }, { 0 } };
+    union optv v[] = { { -1 }, { .f = -1 }, { 0 }, { 0 } };
     if (!take_opt(opts, rootline_opt, v))
         return krr("opt");
     return line(x, y, z, v[0].i, v[1].f, v[2].i, v[3].i);
