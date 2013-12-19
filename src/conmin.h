@@ -6,6 +6,7 @@
 F* take_param(K x, I* n, S* err);
 F* make_param(K x, F* param, K* r);
 
+
 struct call_info {
     int arg; // 0 = make_param(start), 1/-1 = base+arg*scalar
     F base;
@@ -14,6 +15,18 @@ struct call_info {
 } call;
 
 F call_param(struct call_info* info, int sign, K f, F* param);
+
+
+struct eval_info {
+    F first_member; // for CONMAX, makes passing struct as pttbl well-defined
+    struct call_info call;
+    K fun, con;
+    I contyp;
+    int con_sign;
+};
+
+F eval_param(struct eval_info* info,
+             I which, F* param, I n, F* grad, int grad_step, I* contyp);
 
 
 // krr() might return NULL or an error object.
