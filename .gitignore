@@ -20,3 +20,4 @@ lapack/lapack-*/
 /lib/
 debug/*.[chq]
 coverage/*.[chq]
+test/*.pyc
