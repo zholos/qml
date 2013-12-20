@@ -17,7 +17,7 @@ DEFINES += -DDEBUG
 
 valgrind: all
 	valgrind --suppressions=q.supp --leak-check=full --show-reachable=yes \
-	    --trace-children=yes q test.q -cd
+	    --track-origins=yes --trace-children=yes q test.q -cd
 
 clean_misc:
 	rm -f qml.q qml.q.orig test.q test.q.orig .q_files
