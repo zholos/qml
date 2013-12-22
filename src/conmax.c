@@ -124,9 +124,12 @@ skip_call:
     S sig = NULL; // different from err, may be returned instead of raised
     if (iter >= maxiter)
         sig = "iter";
-    else if (iter < 0)
+    else if (iter < 0) {
+        // objective isn't evaluated in this case
+        if (fun)
+            error[numgr] = eval_param(&info, 0, param, nparm, NULL, 1, NULL);
         sig = "feas";
-    else if (!fun && !(error[numgr] >= -tolcon && error[numgr] <= tolcon))
+    } else if (!fun && !(error[numgr] >= -tolcon && error[numgr] <= tolcon))
         sig = "feas";
     else
         repeat (i, nparm)

@@ -99,30 +99,31 @@ call_param(struct call_info* info, int sign, K f, F* param)
 
 F
 eval_param(struct eval_info* info,
-           I which, F* param, I n, F* grad, int grad_step, I* contyp)
+           I which, F* param, I n, F* grad, int grad_step, I* contyp_)
 {
     K f;
     int sign;
+    I contyp;
     assert(callable(info->con) || qt(info->con) == 0);
     if (info->fun) // line, min or conmin
         if (which == 0) { // objective function
             f = info->fun;
             sign = 1;
-            *contyp = 1;
+            contyp = 1;
         } else { // constraints
             f = qt(info->con) ? info->con : qK(info->con, which-1);
             sign = -1;
-            *contyp = info->contyp;
+            contyp = info->contyp;
         }
     else { // root or solve
         f = qt(info->con) ? info->con : qK(info->con, which);
         sign = info->con_sign;
-        *contyp = 2;
+        contyp = 2;
     }
 
     F v = call_param(&info->call, sign, f, param);
     if (grad) {
-        if (*contyp == -1) // linear function
+        if (contyp == -1) // linear function
             repeat (i, n) {
                 F p = param[i];
                 param[i] = p + 1;
@@ -145,8 +146,10 @@ eval_param(struct eval_info* info,
 
     // deactivate all constraints to exit sooner
     if (info->call.error != no_error)
-        *contyp = 0;
+        contyp = 0;
 
+    if (contyp_)
+        *contyp_ = contyp;
     return v;
 }
 

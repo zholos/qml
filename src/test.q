@@ -3798,10 +3798,13 @@ pass:-1;while[2>pass+:1;
             (::;::;::;0<)@'
                 .qml.conminx[`full`quiet`slp`lincon`tol,.1;f;c;0 0]
                 `x`f`cons`iter;
-            (all null@;::;::;::;::;0=;`iter=)@'
+            (all null@;::;::;::;::;::;`iter=)@'
                 .qml.conminx[`full`quiet`rk`steps`iter!1 1 1 3 0;f;c;-.5 -1]
-                `x`last`f`cons`err`iter`sig)};
-    test["conminx_opt[]";"(-3 5%4;(-3 5%4;7%4;0 1%4;1);(1;-.5 -1;3.25;-2.5 -2;2.5;1;1))"];
+                `x`last`f`cons`err`iter`sig;
+            {(z[`f]-x . l;0<>z`f;z[`err]+min[y .\:l:z`last];z`iter;`feas=z`sig)}[f;c1]
+                .qml.conminx[`full`quiet;f;c1:c,{neg y};0 0]
+                )};
+    test["conminx_opt[]";"(-3 5%4;(-3 5%4;7%4;0 1%4;1);(1;-.5 -1;3.25;-2.5 -2;2.5;0;1);0 1 0 0 1)"];
     test[".qml.conminx[`quiet;{(a*a:x-1)+10*b*b:y-1+x*x};();2#0]";"1 2"];
     test[".qml.conminx[`quiet;{(a*a:x-1)+10*b*b:y-1+x*x};();2#5]";"1 2"];
     test[".qml.conminx[`quiet;{(a*a:x-1)+10*b*b:y-1+x*x};();-10 10]";"1 2"];
