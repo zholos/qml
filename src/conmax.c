@@ -129,7 +129,7 @@ skip_call:
         if (fun)
             error[numgr] = eval_param(&info, 0, param, nparm, NULL, 1, NULL);
         sig = "feas";
-    } else if (!fun && !(error[numgr] >= -tolcon && error[numgr] <= tolcon))
+    } else if (!fun && !(fabs(error[numgr]) <= tolcon))
         sig = "feas";
     else
         repeat (i, nparm)
@@ -169,7 +169,7 @@ skip_call:
                  K cons = ktn(KF, numgr-1);
                  repeat (i, numgr-1) {
                      F e = error[i+1];
-                     qF(cons, i) = e >= -tolcon && e <= tolcon ? 0 : -e;
+                     qF(cons, i) = fabs(e) <= tolcon ? 0 : -e;
                  }
                  append_D(d, "cons", cons);
             }
@@ -178,7 +178,7 @@ skip_call:
         if (sig && con != empty_con)
             append_D(d, "err", kf(error[numgr + (!fun ? 0 : lincon ? 1 : 2)]));
 
-        append_D(d, "iter", ki(iter >= 0 ? iter : 0));
+        append_D(d, "iter", ki(max_i(0, iter)));
         if (sig)
             append_D(d, "sig", ks(sig));
 
@@ -250,7 +250,7 @@ root(K fun, K start, I maxiter, F tolcon, int full, int quiet)
     S sig = NULL;
     if (nsrch >= maxiter)
         sig = "iter";
-    else if (!(f2 >= -tolcon && f2 <= tolcon))
+    else if (!(fabs(f2) <= tolcon))
         sig = "feas";
     else if (isnan(p2))
         sig = "nan";
