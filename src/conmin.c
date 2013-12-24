@@ -123,7 +123,9 @@ eval_param(struct eval_info* info,
 
     F v = call_param(&info->call, sign, f, param);
     if (grad) {
+        // CONMAX can do this automatically, but we've already set up the call
         if (contyp == -1) // linear function
+            // don't need a centered difference for linear constraints
             repeat (i, n) {
                 F p = param[i];
                 param[i] = p + 1;
@@ -132,7 +134,8 @@ eval_param(struct eval_info* info,
                 param[i] = p;
             }
         else { // nonlinear function
-            F h = sqrt(DBL_EPSILON / FLT_RADIX);
+            // same algorithm and step as in CONMAX
+            const F h = sqrt(DBL_EPSILON / FLT_RADIX);
             repeat (i, n) {
                 F p = param[i], p1 = p + h, p2 = p - h, v1, v2;
                 param[i] = p1; v1 = call_param(&info->call, sign, f, param);
@@ -144,9 +147,8 @@ eval_param(struct eval_info* info,
         }
     }
 
-    // deactivate all constraints to exit sooner
     if (info->call.error != no_error)
-        contyp = 0;
+        contyp = 0; // deactivate all constraints to exit sooner
 
     if (contyp_)
         *contyp_ = contyp;
