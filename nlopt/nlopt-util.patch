@@ -1,0 +1,27 @@
+Remove bits that depend on config.h so we don't have to source it. This is
+applied only to the header used by qml, not to the header used to build NLopt.
+
+--- nlopt-util.h
++++ nlopt-util.h
+@@ -25,21 +25,9 @@
+ 
+ #include <stdlib.h>
+ #include <math.h>
+-#include "config.h"
+ 
+ #include "nlopt.h"
+ 
+-/* workaround for Solaris + gcc 3.4.x bug (see configure.ac) */
+-#if defined(__GNUC__) && defined(REPLACEMENT_HUGE_VAL)
+-#  undef HUGE_VAL
+-#  define HUGE_VAL REPLACEMENT_HUGE_VAL
+-#endif
+-
+-#ifndef HAVE_COPYSIGN
+-   /* not quite right for y == -0, but good enough for us */
+-#  define copysign(x, y) ((y) < 0 ? -fabs(x) : fabs(x))
+-#endif
+-
+ #ifdef __cplusplus
+ extern "C"
+ {

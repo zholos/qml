@@ -185,7 +185,10 @@ Constants and functions
   line[f;base;x0]         line search for minimum from base
   linex[opt;f;base;x0]    line[] with same options as rootx[]
   min[f;x0]               find unconstrained minimum
-  minx[opt;f;x0]          min[] with same options as solvex[]
+  minx[opt;f;x0]          min[] with same options as solvex[], plus
+                           `nm:    use Nelder–Mead method (default: CONMAX)
+                           `sbplx: use Subplex method     (default: CONMAX)
   conmin[f;cons;x0]       find constrained minimum (functions cons>=0)
   conminx[opt;f;cons;x0]  min[] with same options as solvex[], plus
                            `lincon: assume linear cons    (default: nonlinear)
+                           `cobyla: use COBYLA method     (default: CONMAX)

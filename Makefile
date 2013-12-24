@@ -1,6 +1,6 @@
 include mk/common.mk
 
-PACKAGES := cephes lapack conmax q
+PACKAGES := cephes lapack conmax nlopt q
 BUILDS := src debug
 OTHERS := coverage
 

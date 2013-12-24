@@ -2,8 +2,9 @@ include $(dir $(lastword $(MAKEFILE_LIST)))common.mk
 
 VERSION := 0.4-$(shell date +%Y%m%d)
 
-OBJS := const.o libm.o cephes.o lapack.o conmin.o conmax.o alloc.o util.o opt.o
-INCLUDES := alloc.h util.h opt.h wrap.h conmin.h conmax.h
+OBJS := const.o alloc.o util.o opt.o \
+        libm.o cephes.o lapack.o conmin.o conmax.o nlopt.o
+INCLUDES := alloc.h util.h opt.h wrap.h conmin.h conmax.h nlopt.h
 
 CFLAGS += -std=gnu99 -Wall -Wextra -Wno-missing-field-initializers
 DEFINES = -DQML_VERSION=$(VERSION) -DKXARCH=$(KXARCH) -DKXVER=$(KXVER)
@@ -20,7 +21,7 @@ build: qml.$(DLLEXT)
 
 qml.$(DLLEXT): $(OBJS) qml.symlist qml.mapfile
 	$(CC) $(FLAGS) -shared -o $@ $(OBJS) \
-	    -L../lib -lprob -lconmax \
+	    -L../lib -lprob -lconmax -lnlopt \
 	    $(if $(BUILD_LAPACK),-llapack,$(LIBS_LAPACK)) \
 	    $(if $(BUILD_BLAS),-lrefblas,$(LIBS_BLAS)) \
 	    $(call ld_static,$(LIBS_FORTRAN)) \

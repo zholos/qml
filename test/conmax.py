@@ -108,7 +108,7 @@ def test_line():
             output("    test[\"line_n[%s;%s;%s;%s]\";\"%s\"];" %
                 (norm, func, qforms(alt_x0[i]), qforms(alt_x0[j]), qforms(x)))
         for x0 in alt_x0:
-            for opts in ["()", "`slp"]:
+            for opts in ["()", "`slp", "`nm", "`sbplx"]:
                 output("    test[\"minx_n[%s;%s;%s;%s]\";\"%s\"];" %
                     (norm, opts, func, qforms(x0), qforms(x)))
 
@@ -230,11 +230,12 @@ def test_min():
     test["minx_opt 2";"(1;1 -1;3;1;1)"];""")
 
     def emit(func, alt_x0, x, more = False):
-        opts = "`iter,100000" if more else "()"
-
-        for x0 in alt_x0:
-            output("    test[\"minx_n[::;%s;%s;%s]\";\"%s\"];" %
-                (opts, func, qforms(x0), qforms(x)))
+        for opts in ["", "`nm", "`sbplx"]:
+            if more:
+                opts += "`iter,100000"
+            for x0 in alt_x0:
+                output("    test[\"minx_n[::;%s;%s;%s]\";\"%s\"];" %
+                    (opts or "()", func, qforms(x0), qforms(x)))
 
     emit("{(a*a:x-1)+10*b*b:y-1+x*x}",
          [[0, 0], [5, 5], [-10, 10]],
@@ -277,13 +278,11 @@ def test_conmin():
 
     def emit(func, cons, alt_x0, x, linear = False, more = False):
         opts = "`quiet"
-        if more:
-            opts += "`iter,100000"
-
         alt_opts = [opts]
         if linear:
             alt_opts += [opts + "`lincon",
                          opts + "`slp"]
+        alt_opts += [opts + "`cobyla"]
 
         if isinstance(cons, str):
             alt_cons = [cons,
@@ -298,6 +297,8 @@ def test_conmin():
         for cons in alt_cons:
             for x0 in alt_x0:
                 for opts in alt_opts:
+                    if more:
+                        opts += "`iter,100000" + "00"*("`cobyla" in opts)
                     output("    test[\".qml.conminx[%s;%s;%s;%s]\";\"%s\"];" %
                         (opts, func, cons, qforms(x0), qforms(x)))
 
@@ -316,7 +317,7 @@ def test_conmin():
          [4, 0, 5],
          linear = True)
     emit("{[x;y;z;u]sum{x*x}(x-3;(9*y)-x*x;z-x-y;u-z*z)}",
-         ["{[x;y;z;u]sum -1 -1 1 1%(x;y;z;u)}", "{[x;y;z;u]min(x;y;z;u)}"],
+         ["{[x;y;z;u]sum -1 -1 1 1%v+1e-99%v:(x;y;z;u)}", "{[x;y;z;u]min(x;y;z;u)}"],
          [[1, 1, 1, 1], [2, -3, 4, -5], [1000, 1000, 500, 500]],
          [Decimal("3.1355504511518109809"), Decimal("1.1046418527109901434"), Decimal("1.4278718594741174466"), Decimal("1.9089393921649469239")],
          more = True)
@@ -326,12 +327,12 @@ def test_conmin():
          [[Fraction(3, 4), Fraction(1, 4), 0]],
          linear = True)
     emit("{neg x+2*y}",
-         ["{25-(x*x)+y*y}", "{1+(3*x)-x*y*(3+1%.qml.sqrt 11)%.qml.sqrt 14}", "{(67+2*.qml.sqrt 154)-(x*x)+(2*x*y)+4*y*y}"],
+         ["{25-(x*x)+y*y}", "{1+(3*x)-x*y*(3+1%.qml.sqrt 11)%.qml.sqrt 14}", "{(67+2*.qml.sqrt 154)-(x*x)+(2*x*y)+4*y*y},{x-.5*y}"],
          [[0, 0], [-2, -8], [-7, 15]],
          ".qml.sqrt 11 14")
     emit("{y;0}",
          "{x,(''[neg;x])}{y;.qml.log[x]-(.qml.asin[.qml.sin[pi*x]]%pi)+x*(1+2*.qml.log 1.5)%3},{sum{x*x}21 -17-(1 -2.;3 4.)mmu y}",
-         [[Fraction(7, 4), [1, 2]], [Fraction(5, 4), [2, -4]], [Fraction(1, 10), [2, 0]]],
+         [[Fraction(7, 4), [1, 3]], [Fraction(5, 4), [2, -4]], [Fraction(1, 10), [2, 0]]],
          [Fraction(3, 2), [5, -8]],
          more = True)
 

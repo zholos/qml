@@ -6,6 +6,7 @@
 
 #include "alloc.h"
 #include "conmax.h"
+#include "nlopt.h"
 #include "opt.h"
 
 
@@ -195,8 +196,10 @@ static const struct optn min_opt[] = {
     [2] = { "steps",  -KI },
     [3] = { "slp",      0 },
     [4] = { "rk",       0 },
-    [5] = { "full",     0 },
-    [6] = { "quiet",    0 },
+    [5] = { "nm",       0 },
+    [6] = { "sbplx",    0 },
+    [7] = { "full",     0 },
+    [8] = { "quiet",    0 },
           { NULL }
 };
 
@@ -204,11 +207,17 @@ K
 qml_minx(K opts, K x, K y)
 {
     union optv v[] = { { -1 }, { .f = -1 }, { -1 },
-                       { 0 }, { 0 }, { 0 }, { 0 } };
+                       { 0 }, { 0 }, { 0 }, { 0 }, { 0 }, { 0 } };
     if (!take_opt(opts, min_opt, v))
         return krr("opt");
-    return solvemin(x, empty_con, y, v[0].i, v[1].f, v[2].i,
-                    v[3].i, v[4].i, 0, v[5].i, v[6].i);
+    if (v[5].i || v[6].i) {
+        if (v[5].i && v[6].i || v[1].f >= 0 || v[2].i >= 0 || v[3].i || v[4].i)
+            return krr("opt");
+        return nloptmin(x, empty_con, y, v[0].i, v[1].f,
+                        v[6].i, 0, v[7].i, v[8].i);
+    } else
+        return solvemin(x, empty_con, y, v[0].i, v[1].f, v[2].i,
+                        v[3].i, v[4].i, 0, v[7].i, v[8].i);
 }
 
 K
@@ -223,9 +232,10 @@ static const struct optn conmin_opt[] = {
     [2] = { "steps",  -KI },
     [3] = { "slp",      0 },
     [4] = { "rk",       0 },
-    [5] = { "lincon",   0 },
-    [6] = { "full",     0 },
-    [7] = { "quiet",    0 },
+    [5] = { "cobyla",   0 },
+    [6] = { "lincon",   0 },
+    [7] = { "full",     0 },
+    [8] = { "quiet",    0 },
           { NULL }
 };
 
@@ -233,11 +243,17 @@ K
 qml_conminx(K opts, K x, K y, K z)
 {
     union optv v[] = { { -1 }, { .f = -1 }, { -1 },
-                       { 0 }, { 0 }, { 0 }, { 0 }, { 0 } };
+                       { 0 }, { 0 }, { 0 }, { 0 }, { 0 }, { 0 } };
     if (!take_opt(opts, conmin_opt, v))
         return krr("opt");
-    return solvemin(x, y, z, v[0].i, v[1].f, v[2].i,
-                    v[3].i, v[4].i, v[5].i, v[6].i, v[7].i);
+    if (v[5].i) {
+        if (v[2].i >= 0 || v[3].i || v[4].i)
+            return krr("opt");
+        return nloptmin(x, y, z, v[0].i, v[1].f,
+                        0, v[6].i, v[7].i, v[8].i);
+    } else
+        return solvemin(x, y, z, v[0].i, v[1].f, v[2].i,
+                        v[3].i, v[4].i, v[6].i, v[7].i, v[8].i);
 }
 
 K
