@@ -18,12 +18,15 @@ def test_root():
     output("""\
     rootx_opt:{
         f:{(x-3)*x-5};
-        (.qml.root[f;4 7];
-            (::;0<)@'.qml.rootx[`full;f;4,7.]`x`iter;
-            (null;::;::;::;`sign=)@'
-                .qml.rootx[`full`quiet`iter,200,`tol,0;f;6 7.]
-                    `x`last`err`iter`sig)};
-    test["rootx_opt[]";"(5;5 1;1 7 8 200 1)"];
+        $[x=0;.qml.root[f;4 7];
+          x=1;(::;0<)@'.qml.rootx[`full;f;4,7.]`x`iter;
+          x=2;(null;::;::;::;`sign=)@'
+                  .qml.rootx[`full`quiet`iter,200,`tol,0;f;6 7.]
+                  `x`last`err`iter`sig;
+          '`]};
+    test["rootx_opt 0";"5"];
+    test["rootx_opt 1";"5 1"];
+    test["rootx_opt 2";"1 7 8 200 1"];
     root_n:{[norm;f;x0]
         norm .qml.rootx[`quiet;f;x0]};
     solve_n:{[norm;f;x0]
@@ -85,12 +88,15 @@ def test_line():
     output("""\
     linex_opt:{
         f:{(x-3)*x-5};
-        (.qml.line[f;0;1];
-            (::;::;0<)@'.qml.linex[enlist`full;f;0.;1]`x`f`iter;
-            {(null y 0;x[y 1]-y 2;0<y 3;`iter=y 4)}[f]
-                .qml.linex[`full`quiet`iter`tol!1 1 3 0;f;0.;1.]
-                `x`last`f`iter`sig)};
-    test["linex_opt[]";"(4;4 -1 1;1 0 1 1)"];
+        $[x=0;.qml.line[f;0;1];
+          x=1;(::;::;0<)@'.qml.linex[enlist`full;f;0.;1]`x`f`iter;
+          x=2;{(null y 0;x[y 1]-y 2;0<y 3;`iter=y 4)}[f]
+                  .qml.linex[`full`quiet`iter`tol!1 1 3 0;f;0.;1.]
+                  `x`last`f`iter`sig;
+          '`]};
+    test["linex_opt 0";"4"];
+    test["linex_opt 1";"4 -1 1"];
+    test["linex_opt 2";"1 0 1 1"];
     line_n:{[norm;f;base;x0]
         norm .qml.linex[`quiet;f;base;x0]};
     minx_n:{[norm;opt;f;x0]
@@ -144,11 +150,17 @@ def test_solve():
     output("""\
     solvex_opt:{
         f:{20-x-2*y},{-10-(3*x)+4*y};
-        (.qml.solve[f;0 0];
-            (::;0<)@'.qml.solvex[`full`rk`steps`tol`iter!1,1b,10,.1,100;f;0.,0]`x`iter;
-            (all null@;::;prec>abs@;0<;`feas=)@'
-                .qml.solvex[`full`quiet`slp`tol,0;f;0.,0]`x`last`err`iter`sig)};
-    test["solvex_opt[]";"(6 -7;((6 -7);1);(1;(6f;-7f);1;1;1))"];""")
+        $[x=0;.qml.solve[f;0 0];
+          x=1;(::;0<)@'
+                  .qml.solvex[`full`rk`steps`tol`iter!1,1b,10,.1,100;f;0.,0]
+                  `x`iter;
+          x=2;(all null@;::;prec>abs@;0<;`feas=)@'
+                  .qml.solvex[`full`quiet`slp`tol,0;f;0.,0]
+                  `x`last`err`iter`sig;
+          '`]};
+    test["solvex_opt 0";"6 -7"];
+    test["solvex_opt 1";"(6 -7;1)"];
+    test["solvex_opt 2";"(1;6 -7;1;1;1)"];""")
 
     def emit(funcs, alt_x0, x, comment = ""):
         if isinstance(funcs, str):
@@ -207,11 +219,15 @@ def test_min():
     output("""\
     minx_opt:{
         f:{(x*x)+(2*y*y)-x*y+1};
-        (.qml.min[f;0 0];
-            (::;::;0<)@'.qml.minx[`full;f;0 0]`x`f`iter;
-            (all null@;::;::;0=;`iter=)@'
-                .qml.minx[`full`quiet`iter,0;f;1 -1]`x`last`f`iter`sig)};
-    test["minx_opt[]";"(4 1%7;(4 1%7;-2%7;1);(1;1 -1;3;1;1))"];""")
+        $[x=0;.qml.min[f;0 0];
+          x=1;(::;::;0<)@'.qml.minx[`full;f;0 0]`x`f`iter;
+          x=2;(all null@;::;::;0=;`iter=)@'
+                  .qml.minx[`full`quiet`iter,0;f;1 -1]
+                  `x`last`f`iter`sig;
+          '`]};
+    test["minx_opt 0";"4 1%7"];
+    test["minx_opt 1";"(4 1%7;-2%7;1)"];
+    test["minx_opt 2";"(1;1 -1;3;1;1)"];""")
 
     def emit(func, alt_x0, x, more = False):
         opts = "`iter,100000" if more else "()"
@@ -244,17 +260,20 @@ def test_conmin():
     conminx_opt:{
         f:{(x*x)+(y*y)+(2*x*y)-2*x};
         c:{y-2+x},{y-1};
-        (.qml.conmin[f;c;0 0];
-            (::;::;::;0<)@'
-                .qml.conminx[`full`quiet`slp`lincon`tol,.1;f;c;0 0]
-                `x`f`cons`iter;
-            (all null@;::;::;::;::;::;`iter=)@'
-                .qml.conminx[`full`quiet`rk`steps`iter!1 1 1 3 0;f;c;-.5 -1]
-                `x`last`f`cons`err`iter`sig;
-            {(z[`f]-x . l;0<>z`f;z[`err]+min[y .\:l:z`last];z`iter;`feas=z`sig)}[f;c1]
-                .qml.conminx[`full`quiet;f;c1:c,{neg y};0 0]
-                )};
-    test["conminx_opt[]";"(-3 5%4;(-3 5%4;7%4;0 1%4;1);(1;-.5 -1;3.25;-2.5 -2;2.5;0;1);0 1 0 0 1)"];""")
+        $[x=0;.qml.conmin[f;c;0 0];
+          x=1;(::;::;::;0<)@'
+                  .qml.conminx[`full`quiet`slp`lincon`tol,.1;f;c;0 0]
+                  `x`f`cons`iter;
+          x=2;(all null@;::;::;::;::;::;`iter=)@'
+                  .qml.conminx[`full`quiet`rk`steps`iter!1 1 1 3 0;f;c;-.5 -1]
+                  `x`last`f`cons`err`iter`sig;
+          x=3;{(z[`f]-x . l;0<>z`f;z[`err]+min[y .\:l:z`last];z`iter;`feas=z`sig)}[f;c1]
+                  .qml.conminx[`full`quiet;f;c1:c,{neg y};0 0];
+          '`]};
+    test["conminx_opt 0";"-3 5%4"];
+    test["conminx_opt 1";"(-3 5%4;7%4;0 1%4;1)"];
+    test["conminx_opt 2";"(1;-.5 -1;3.25;-2.5 -2;2.5;0;1)"];
+    test["conminx_opt 3";"0 1 0 0 1"];""")
 
     def emit(func, cons, alt_x0, x, linear = False, more = False):
         opts = "`quiet"
