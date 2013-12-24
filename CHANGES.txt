@@ -1,3 +1,8 @@
+Version 0.5 on 2013-12-31:
+  * Linked to NLopt to provide more optimization algorithms, exposed as `nl and
+    `sbplx options for 'min' and `cobyla option for 'conmin'.
+  * Added 'mkron' function.
+
 Version 0.4 on 2013-05-12:
   * Added support for kdb+ 3.0.
   * Added option to link with external BLAS and LAPACK libraries.
