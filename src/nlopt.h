@@ -3,7 +3,7 @@
 
 #include "util.h"
 
-K nloptmin(K fun, K con, K start_, I maxiter, F tolcon,
+K nloptmin(K fun, K con, K start_, I maxiter, F tolcon, I steps,
            I method, I lincon, I full, I quiet);
 
 #endif // QML_SRC_NLOPT_H

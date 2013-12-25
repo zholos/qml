@@ -2,6 +2,7 @@
 
 #include <neldermead.h>
 #include <cobyla.h>
+#include <mma.h>
 
 #include "nlopt.h"
 
@@ -30,12 +31,12 @@ constraints(unsigned m, double* result, unsigned n, const double* param,
 
 
 K
-nloptmin(K fun, K con, K start_, I maxiter, F tolcon,
+nloptmin(K fun, K con, K start_, I maxiter, F tolcon, I steps,
          I method, I lincon, I full, I quiet)
 {
     //         fun       con               method
     // min     callable  empty list        0=nl, 1=sbplx
-    // conmin  callable  callable or list  0=cobyla
+    // conmin  callable  callable or list  0=cobyla, 1=mma
 
     if (!callable(fun) || !callable(con) && qt(con) != 0)
         return krr("type");
@@ -54,6 +55,7 @@ nloptmin(K fun, K con, K start_, I maxiter, F tolcon,
 
     I ncon = qt(con) ? 1 : qn(con);
     if (ncon > 10000) // with nparm limit, approximate limit for cobyla.c
+                      // TODO: check mma.c
         if (!err) err = "limit";
 
     F* xstep = alloc_F(&nparm, &err);
@@ -71,7 +73,7 @@ nloptmin(K fun, K con, K start_, I maxiter, F tolcon,
     F* fc_tol = alloc_F(&ncon, &err);
     repeat (i, ncon)
         // irrelevant for COBYLA because used only in minf_max check
-        fc_tol[i] = 0;
+        fc_tol[i] = 100 * DBL_EPSILON; // TODO: should be tolcon for MMA
 
     struct eval_info info;
     info.call.arg = qt(start) == -KF ? 1 : 0;
@@ -82,12 +84,17 @@ nloptmin(K fun, K con, K start_, I maxiter, F tolcon,
     info.con = con;
     info.contyp = lincon ? -1 : -2;
     info.con_sign = 1;
+    info.deriv = 1;
 
     if (maxiter < 0) {
         maxiter = 10000; // option default
-        if (con != empty_con)
+        if (con != empty_con && !method)
             maxiter *= 100; // iterations are much faster in COBYLA
     }
+
+    // inner steps for MMA
+    if (steps < 0)
+        steps = 100;
 
     nlopt_stopping stop = {
         .n = nparm,
@@ -96,11 +103,17 @@ nloptmin(K fun, K con, K start_, I maxiter, F tolcon,
         .xtol_abs = xtol_abs
     };
 
-    if (con != empty_con) {
-        if (!(tolcon >= 0))
-            tolcon = sqrt(DBL_EPSILON / FLT_RADIX);
-        stop.xtol_rel = DBL_EPSILON; // COBYLA calculates rho from this
-    }
+    if (con != empty_con)
+        if (method) {
+            // should not be zero, as this is the only termination criterion
+            if (!(tolcon > 0)) 
+                tolcon = sqrt(DBL_EPSILON / FLT_RADIX);
+            stop.ftol_abs = tolcon;
+        } else {
+            if (!(tolcon >= 0))
+                tolcon = sqrt(DBL_EPSILON / FLT_RADIX);
+            stop.xtol_rel = DBL_EPSILON; // COBYLA calculates rho from this
+        }
 
     if (err) {
         info.call.error = krr(err);
@@ -126,9 +139,14 @@ nloptmin(K fun, K con, K start_, I maxiter, F tolcon,
             .tol = fc_tol
         };
 
-        result = cobyla_minimize(nparm, objective, &info,
-                                 1, &fc, 0, NULL, lbound, ubound,
-                                 param, &minf, &stop, xstep);
+        if (method) {
+            result = mma_minimize(nparm, objective, &info,
+                                  1, &fc, lbound, ubound,
+                                  param, &minf, &stop, 0, steps);
+        } else
+            result = cobyla_minimize(nparm, objective, &info,
+                                     1, &fc, 0, NULL, lbound, ubound,
+                                     param, &minf, &stop, xstep);
     } else
         if (method)
             result = sbplx_minimize(nparm, objective, &info, lbound, ubound,
@@ -185,7 +203,7 @@ skip_call:
             if (full)
                 qF(cons, i) = fabs(e) <= tolcon ? 0 : -e;
         }
-        if (!sig && con_err > tolcon)
+        if (!sig && con_err > tolcon) // TODO: need looser check for MMA?
             sig = "feas";
     }
 

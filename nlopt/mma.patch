@@ -1,0 +1,114 @@
+--- mma/mma.c
++++ mma/mma.c
+@@ -27,6 +27,7 @@
+ 
+ #include "mma.h"
+ #include "nlopt-util.h"
++#include "../neldermead/neldermead.h"
+ 
+ unsigned mma_verbose = 0; /* > 0 for verbose output */
+ 
+@@ -153,7 +154,7 @@
+ 			  double *x, /* in: initial guess, out: minimizer */
+ 			  double *minf,
+ 			  nlopt_stopping *stop,
+-			  nlopt_opt dual_opt)
++			  double dual_xtol_abs, int dual_steps)
+ {
+      nlopt_result ret = NLOPT_SUCCESS;
+      double *xcur, rho, *sigma, *dfdx, *dfdx_cur, *xprev, *xprevprev, fcur;
+@@ -164,10 +165,10 @@
+      int feasible;
+      double infeasibility;
+      unsigned mfc;
++     double *xstep, *xtol_abs;
+ 
+      m = nlopt_count_constraints(mfc = m, fc);
+-     if (nlopt_get_dimension(dual_opt) != m) return NLOPT_INVALID_ARGS;
+-     sigma = (double *) malloc(sizeof(double) * (6*n + 2*m*n + m*7));
++     sigma = (double *) malloc(sizeof(double) * (6*n + 2*m*n + m*9));
+      if (!sigma) return NLOPT_OUT_OF_MEMORY;
+      dfdx = sigma + n;
+      dfdx_cur = dfdx + n;
+@@ -181,7 +182,9 @@
+      dual_lb = gcval + m;
+      dual_ub = dual_lb + m;
+      y = dual_ub + m;
+-     dfcdx = y + m;
++     xtol_abs = y + m;
++     xstep = xtol_abs + m;
++     dfcdx = xstep + m;
+      dfcdx_cur = dfcdx + m*n;
+ 
+      dd.n = n;
+@@ -207,6 +210,7 @@
+ 	  rhoc[i] = 1.0;
+ 	  dual_lb[i] = y[i] = 0.0;
+ 	  dual_ub[i] = HUGE_VAL;
++	  xtol_abs[i] = dual_xtol_abs;
+      }
+ 
+      dd.fval = fcur = *minf = f(n, x, dfdx, f_data);
+@@ -239,13 +243,6 @@
+      if (!feasible)
+ 	  for (i = 0; i < m; ++i) dual_ub[i] = 1e40;
+ 
+-     nlopt_set_min_objective(dual_opt, dual_func, &dd);
+-     nlopt_set_lower_bounds(dual_opt, dual_lb);
+-     nlopt_set_upper_bounds(dual_opt, dual_ub);
+-     nlopt_set_stopval(dual_opt, -HUGE_VAL);
+-     nlopt_remove_inequality_constraints(dual_opt);
+-     nlopt_remove_equality_constraints(dual_opt);
+-
+      while (1) { /* outer iterations */
+ 	  double fprev = fcur;
+ 	  if (nlopt_stop_forced(stop)) ret = NLOPT_FORCED_STOP;
+@@ -263,15 +260,25 @@
+ 	       unsigned save_verbose;
+ 	       int new_infeasible_constraint;
+ 	       nlopt_result reti;
++               nlopt_stopping dual_stop = { 0 };
++
++               dual_stop.n = m;
++               dual_stop.minf_max = -HUGE_VAL;
++               dual_stop.maxeval = dual_steps;
++               dual_stop.xtol_abs = xtol_abs;
+ 
+ 	       /* solve dual problem */
+ 	       dd.rho = rho; dd.count = 0;
+ 	       save_verbose = mma_verbose;
+ 	       mma_verbose = 0; /* no recursive verbosity */
+-	       reti = nlopt_optimize_limited(dual_opt, y, &min_dual,
+-					     0,
+-					     stop->maxtime - (nlopt_seconds() 
+-							      - stop->start));
++
++	       for (i = 0; i < m; i++)
++		    xstep[i] = fmax(1, y[i]);
++
++	       reti = nldrmd_minimize(m, dual_func, &dd,
++				      dual_lb, dual_ub, y, &min_dual,
++				      xstep, &dual_stop);
++
+ 	       mma_verbose = save_verbose;
+ 	       if (reti < 0 || reti == NLOPT_MAXTIME_REACHED) {
+ 		    ret = reti;
+@@ -336,7 +343,6 @@
+ 		    if (infeasibility_cur == 0) {
+ 			 if (!feasible) { /* reset upper bounds to infin. */
+ 			      for (i = 0; i < m; ++i) dual_ub[i] = HUGE_VAL;
+-			      nlopt_set_upper_bounds(dual_opt, dual_ub);
+ 			 }
+ 			 feasible = 1;
+ 		    }
+--- mma/mma.h
++++ mma/mma.h
+@@ -39,7 +39,7 @@
+ 			  double *x, /* in: initial guess, out: minimizer */
+ 			  double *minf,
+ 			  nlopt_stopping *stop,
+-			  nlopt_opt dual_opt);
++			  double dual_xtol_abs, int dual_steps);
+ 
+ nlopt_result ccsa_quadratic_minimize(
+      unsigned n, nlopt_func f, void *f_data,

@@ -17,6 +17,7 @@ do_configure:
 # Don't need most of the routines from general.c but they pull in other files.
 do_patch:
 	$(SEDI) '/nlopt_version/,$$d' nlopt/api/general.c
+	patch -p0 -d nlopt <mma.patch
 	cp timer.c nlopt/util/
 	cp nlopt/util/nlopt-util.h work/
 	patch -p0 -d work <nlopt-util.patch
@@ -25,10 +26,12 @@ do_patch:
 # All are MIT-licensed.
 OBJS = neldermead/nldrmd.o neldermead/sbplx.o \
        cobyla/cobyla.o \
+       mma/mma.o \
        util/redblack.o util/qsort_r.o util/rescale.o util/stop.o util/timer.o \
        api/general.o
 HEADERS = neldermead/neldermead.h \
           cobyla/cobyla.h \
+          mma/mma.h \
           api/nlopt.h
 
 define rule_make

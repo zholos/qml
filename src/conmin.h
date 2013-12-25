@@ -23,6 +23,7 @@ struct eval_info {
     K fun, con;
     I contyp;
     int con_sign;
+    int deriv; // 0 = constant (CONMAX), 1 = relative (NLopt)
 };
 
 F eval_param(struct eval_info* info,

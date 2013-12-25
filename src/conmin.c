@@ -129,16 +129,24 @@ eval_param(struct eval_info* info,
             // don't need a centered difference for linear constraints
             repeat (i, n) {
                 F p = param[i];
-                param[i] = p + 1;
-                *grad = call_param(&info->call, sign, f, param) - v;
+                if (info->deriv) {
+                    param[i] = p >= 0 ? -1 : 1;
+                    *grad = (call_param(&info->call, sign, f, param) - v) /
+                            (param[i] - p);
+                } else {
+                    param[i] = p + 1;
+                    *grad = call_param(&info->call, sign, f, param) - v;
+                }
                 grad += grad_step;
                 param[i] = p;
             }
         else { // nonlinear function
             // same algorithm and step as in CONMAX
-            const F h = sqrt(DBL_EPSILON / FLT_RADIX);
+            const F h0 = sqrt(DBL_EPSILON / FLT_RADIX);
             repeat (i, n) {
-                F p = param[i], p1 = p + h, p2 = p - h, v1, v2;
+                F p = param[i];
+                F h = info->deriv ? fmax(fabs(p) * h0, h0) : h0;
+                F p1 = p + h, p2 = p - h, v1, v2;
                 param[i] = p1; v1 = call_param(&info->call, sign, f, param);
                 param[i] = p2; v2 = call_param(&info->call, sign, f, param);
                 *grad = (v1 - v2) / (p1 - p2);
@@ -211,9 +219,9 @@ qml_minx(K opts, K x, K y)
     if (!take_opt(opts, min_opt, v))
         return krr("opt");
     if (v[5].i || v[6].i) {
-        if (v[5].i && v[6].i || v[1].f >= 0 || v[2].i >= 0 || v[3].i || v[4].i)
+        if (v[5].i && v[6].i || v[2].i >= 0 || v[3].i || v[4].i)
             return krr("opt");
-        return nloptmin(x, empty_con, y, v[0].i, v[1].f,
+        return nloptmin(x, empty_con, y, v[0].i, v[1].f, v[2].i,
                         v[6].i, 0, v[7].i, v[8].i);
     } else
         return solvemin(x, empty_con, y, v[0].i, v[1].f, v[2].i,
@@ -233,9 +241,10 @@ static const struct optn conmin_opt[] = {
     [3] = { "slp",      0 },
     [4] = { "rk",       0 },
     [5] = { "cobyla",   0 },
-    [6] = { "lincon",   0 },
-    [7] = { "full",     0 },
-    [8] = { "quiet",    0 },
+    [6] = { "mma",      0 },
+    [7] = { "lincon",   0 },
+    [8] = { "full",     0 },
+    [9] = { "quiet",    0 },
           { NULL }
 };
 
@@ -243,17 +252,17 @@ K
 qml_conminx(K opts, K x, K y, K z)
 {
     union optv v[] = { { -1 }, { .f = -1 }, { -1 },
-                       { 0 }, { 0 }, { 0 }, { 0 }, { 0 }, { 0 } };
+                       { 0 }, { 0 }, { 0 }, { 0 }, { 0 }, { 0 }, { 0 } };
     if (!take_opt(opts, conmin_opt, v))
         return krr("opt");
-    if (v[5].i) {
-        if (v[2].i >= 0 || v[3].i || v[4].i)
+    if (v[5].i || v[6].i) {
+        if (v[5].i && v[6].i || !v[6].i && v[2].i >= 0 || v[3].i || v[4].i)
             return krr("opt");
-        return nloptmin(x, y, z, v[0].i, v[1].f,
-                        0, v[6].i, v[7].i, v[8].i);
+        return nloptmin(x, y, z, v[0].i, v[1].f, v[2].i,
+                        v[6].i, v[7].i, v[8].i, v[9].i);
     } else
         return solvemin(x, y, z, v[0].i, v[1].f, v[2].i,
-                        v[3].i, v[4].i, v[6].i, v[7].i, v[8].i);
+                        v[3].i, v[4].i, v[7].i, v[8].i, v[9].i);
 }
 
 K

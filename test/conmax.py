@@ -304,7 +304,8 @@ def test_conmin():
         if linear:
             alt_opts += [opts + "`lincon",
                          opts + "`slp"]
-        alt_opts += [opts + "`cobyla"]
+        alt_opts += [opts + "`cobyla",
+                     opts + "`mma"]
 
         if isinstance(cons, str):
             alt_cons = [cons,

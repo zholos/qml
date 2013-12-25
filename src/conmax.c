@@ -88,6 +88,7 @@ solvemin(K fun, K con, K start_, I maxiter, F tolcon, I steps,
     info.con = con;
     info.contyp = lincon ? -1 : -2;
     info.con_sign = 1;
+    info.deriv = 0;
 
     // not safe to make the call in case of error because some arrays have an
     // assumed minimum size
@@ -219,6 +220,7 @@ root(K fun, K start, I maxiter, F tolcon, int full, int quiet)
     info.con = fun;
     info.contyp = -2;
     info.con_sign = 1;
+    info.deriv = 0;
 
     F f1 = call_param(&info.call, 1, fun, &p1);
     F f2 = call_param(&info.call, 1, fun, &p2);
@@ -292,6 +294,7 @@ line(K fun, K base, K start, I maxiter, F tolcon, int full, int quiet)
     info.call.error = no_error;
     info.fun = fun;
     info.con = fun; // min/line flag
+    info.deriv = 0;
 
     F projct = convert_f(start) - info.call.base;
     if (projct < 0) {
