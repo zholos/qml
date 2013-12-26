@@ -4,13 +4,6 @@ if[any"-cd"~/:.z.x;
 \l qml.q
 -1"qml ",string .qml.version;
 
-mttests:enlist[`]!enlist();
-run:$[8<=system"s";
-    {if[$[pass<>0;0b;reps=0;0b;-11h=type v;0b;
-            (-11h=type x 0) and 0h=type x:parse x;1b;'`run];
-        mttests[x 0],:enlist((v~value@;eval each x);reps)] v:@[value;;`$] x};
-    @[value;;`$]];
-
 cmp:{
     $[all (t:type each (x;y)) within -9 -1h;
         (x=y) or $[y=0;1e-15|prec%1000;prec*abs y]>=0w^abs x-y;
@@ -18,9 +11,14 @@ cmp:{
         $[count[x]=count y;all .z.s'[x;y];0b];
         0b]};
 
+mttests:enlist[`]!enlist();
 passed:total:2#0;
 test:{
-    total[pass]+:1;passed[pass]+:r:cmp[run x;value y];
+    v:@[value;x;`$];
+    if[$[8>system"s";0b;pass<>0;0b;reps=0;0b;-11h=type v;0b;
+            (-11h=type p 0) and 0h=type p:parse x;1b;'`run];
+        mttests[p 0],:enlist((v~value@;eval each p);reps)];
+    total[pass]+:1;passed[pass]+:r:cmp[v;value y];
     if[not[r] and pass=0;-1"Failed ",x," = ",y];
     };
 

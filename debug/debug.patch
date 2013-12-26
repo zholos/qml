@@ -18,14 +18,12 @@
 +debug_coverage[];
 --- test.q
 +++ test.q
-@@ -20,7 +20,9 @@
- 
+@@ -14,7 +14,7 @@
+ mttests:enlist[`]!enlist();
  passed:total:2#0;
  test:{
--    total[pass]+:1;passed[pass]+:r:cmp[run x;value y];
-+    while[.qml.debug_alloc[];
-+        v:@[run;x;{$[x~"wsfull";::;'x]}]];
-+    total[pass]+:1;passed[pass]+:r:cmp[v;value y];
-     if[not[r] and pass=0;-1"Failed ",x," = ",y];
-     };
- 
+-    v:@[value;x;`$];
++    while[.qml.debug_alloc[];v:@[value;x;`$]];
+     if[$[8>system"s";0b;pass<>0;0b;reps=0;0b;-11h=type v;0b;
+             (-11h=type p 0) and 0h=type p:parse x;1b;'`run];
+         mttests[p 0],:enlist((v~value@;eval each p);reps)];
