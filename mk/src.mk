@@ -54,7 +54,7 @@ uninstall:
 endif
 
 test: build
-	q test.q -cd -s 16
+	q test.q -cd -s 16 </dev/null
 
 clean_src:
 clean_misc:
