@@ -22,6 +22,7 @@ build: qml.$(DLLEXT)
 qml.$(DLLEXT): $(OBJS) qml.symlist qml.mapfile
 	$(CC) $(FLAGS) -shared -o $@ $(OBJS) \
 	    -L../lib -lprob -lconmax -lnlopt \
+	    $(LDFLAGS) \
 	    $(if $(BUILD_LAPACK),-llapack,$(LIBS_LAPACK)) \
 	    $(if $(BUILD_BLAS),-lrefblas,$(LIBS_BLAS)) \
 	    $(call ld_static,$(LIBS_FORTRAN)) \
