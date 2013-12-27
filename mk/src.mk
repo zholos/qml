@@ -42,13 +42,14 @@ qml.mapfile: qml.symlist
 
 
 ifneq ($(QHOME),)
+# don't export QHOME because q below should get it from the general environment
 install: build
-	cp qml.$(DLLEXT) $(QHOME)/$(KXARCH)/
-	cp qml.q         $(QHOME)/
+	cp qml.$(DLLEXT) '$(QHOME)'/$(KXARCH)/
+	cp qml.q         '$(QHOME)'/
 	
 uninstall:
-	rm -f -- $(QHOME)/$(KXARCH)/qml.$(DLLEXT)
-	rm -f -- $(QHOME)/qml.q
+	rm -f -- '$(QHOME)'/$(KXARCH)/qml.$(DLLEXT)
+	rm -f -- '$(QHOME)'/qml.q
 endif
 
 test: build
