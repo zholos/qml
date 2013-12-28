@@ -318,7 +318,9 @@ def test_conmin():
             for x0 in alt_x0:
                 for opts in alt_opts:
                     if more:
-                        opts += "`iter,100000" + "00"*("`cobyla" in opts)
+                        opts += "`iter,100000"
+                        if "`cobyla" in opts:
+                            opts += "00,`tol,1e-6"
                     output("    test[\".qml.conminx[%s;%s;%s;%s]\";\"%s\"];" %
                         (opts, func, cons, qforms(x0), qforms(x)))
 
