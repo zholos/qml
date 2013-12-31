@@ -1,5 +1,5 @@
-#ifndef OPT_H
-#define OPT_H
+#ifndef QML_SRC_OPT_H
+#define QML_SRC_OPT_H
 
 #include <k.h>
 
@@ -18,4 +18,4 @@ union optv {
 int take_opt(K x, const struct optn* n, union optv* v);
 
 
-#endif // OPT_H
+#endif // QML_SRC_OPT_H

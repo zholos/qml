@@ -44,7 +44,7 @@ USAGE
 unset CONFTEST KXARCH KXVER QHOME_CONFIG CC FC CFLAGS CFLAGS_FLOAT
 unset FFLAGS FFLAGS_FLOAT FFLAGS_THREAD
 unset FLAGS FLAGS_BITS FLAGS_WINDOWS FLAGS_PIC FLAGS_PIPE
-unset TOOLPREFIX XCC CONFIG LDFLAGS LD_EXPORT LD_STATIC
+unset TOOLPREFIX XCC CONFIG LDFLAGS LDFLAGS_LIBGCC LD_EXPORT LD_STATIC
 unset LIBS_FORTRAN LIBS_BLAS LIBS_LAPACK
 unset FETCH SHA256
 unset BUILD_BLAS BUILD_ATLAS WITH_BLAS WITH_LAPACK
@@ -52,22 +52,23 @@ unset BUILD_BLAS BUILD_ATLAS WITH_BLAS WITH_LAPACK
 
 for arg in "$@"; do
     case "$arg" in
-                    KXARCH=*)        KXARCH="${arg#*=}" ;;
-                     KXVER=*)         KXVER="${arg#*=}" ;;
-                        CC=*)            CC="${arg#*=}" ;;
-                        FC=*)            FC="${arg#*=}" ;;
-                    CFLAGS=*)        CFLAGS="${arg#*=}" ;;
-                    FFLAGS=*)        FFLAGS="${arg#*=}" ;;
-                     FLAGS=*)         FLAGS="${arg#*=}" ;;
-                TOOLPREFIX=*)    TOOLPREFIX="${arg#*=}" ;;
-                       XCC=*)           XCC="${arg#*=}" ;;
-                --build-blas)    BUILD_BLAS=1           ;;
-               --build-atlas)   BUILD_ATLAS=1           ;;
-               --with-blas=*)     WITH_BLAS="${arg#*=}" ;;
-              --build-lapack)  BUILD_LAPACK=1           ;;
-             --with-lapack=*)   WITH_LAPACK="${arg#*=}" ;;
-                   -h|--help) usage; exit 0 ;;
-                           *) echo "unknown configure option $1" >&2; exit 1 ;;
+               KXARCH=*)        KXARCH="${arg#*=}" ;;
+                KXVER=*)         KXVER="${arg#*=}" ;;
+                   CC=*)            CC="${arg#*=}" ;;
+                   FC=*)            FC="${arg#*=}" ;;
+               CFLAGS=*)        CFLAGS="${arg#*=}" ;;
+               FFLAGS=*)        FFLAGS="${arg#*=}" ;;
+                FLAGS=*)         FLAGS="${arg#*=}" ;;
+           TOOLPREFIX=*)    TOOLPREFIX="${arg#*=}" ;;
+                  XCC=*)           XCC="${arg#*=}" ;;
+           --build-blas)    BUILD_BLAS=1           ;;
+          --build-atlas)   BUILD_ATLAS=1           ;;
+          --with-blas=*)     WITH_BLAS="${arg#*=}" ;;
+         --build-lapack)  BUILD_LAPACK=1           ;;
+        --with-lapack=*)   WITH_LAPACK="${arg#*=}" ;;
+              -h|--help) usage; exit 0 ;;
+                      *) echo "unknown configure option $1, try --help" >&2
+                         exit 1 ;;
     esac
 done
 
@@ -207,7 +208,7 @@ makeenv () {
         TOOLPREFIX="$TOOLPREFIX" \
         XCC="$XCC" \
         CONFIG="$CONFIG" \
-        LDFLAGS="$LDFLAGS" \
+        LDFLAGS="$LDFLAGS $LDFLAGS_LIBGCC" \
         LD_EXPORT="$LD_EXPORT" \
         LD_STATIC="$LD_STATIC" \
         LIBS_FORTRAN="$LIBS_FORTRAN" \
@@ -400,6 +401,16 @@ makeselect "selecting shared library options..." \
            FLAGS_PIC shared_link \
            -fPIC ""
 
+if [ -z "${KXARCH##w*}" ]; then
+    # Avoid editing PATH to point to MinGW DLLs by linking statically.
+    # Could detect whether this is really needed, but then the portability of
+    # the resulting binary would be less predictable.
+    makeselect "selecting Windows DLL options..." \
+               "couldn't create Windows DLL." \
+               LDFLAGS_LIBGCC shared_link \
+               -static-libgcc ""
+fi
+
 makeselect "selecting how to export specific symbols..." \
            "couldn't export specific symbols." \
            LD_EXPORT ld_export \
@@ -494,7 +505,7 @@ FLAGS          := $FLAGS $FLAGS_BITS $FLAGS_WINDOWS $FLAGS_PIC $FLAGS_PIPE
 TOOLPREFIX     := $TOOLPREFIX
 XCC            := $XCC
 CONFIG         := $CONFIG
-LDFLAGS        := $LDFLAGS
+LDFLAGS        := $LDFLAGS $LDFLAGS_LIBGCC
 LD_EXPORT      := $LD_EXPORT
 LD_STATIC      := $LD_STATIC
 LIBS_FORTRAN   := $LIBS_FORTRAN

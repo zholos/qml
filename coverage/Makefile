@@ -5,7 +5,7 @@ build: .q_files
 $(call copy_src,../debug)
 
 CFLAGS += -O0 -Wno-parentheses
-CFLAGS += -ggdb --coverage
+FLAGS += -ggdb --coverage
 DEFINES += -DDEBUG -DCOVERAGE
 
 .q_files: ../debug/.q_files
@@ -14,7 +14,7 @@ DEFINES += -DDEBUG -DCOVERAGE
 
 coverage: all
 	rm -f -- *.gcda *.gcov
-	-q test.q
+	-q test.q -cd
 	$(foreach c, \
 	    $(patsubst %.o,%.c,$(OBJS)) \
 	    $(filter-out wrap.h,$(INCLUDES)),gcov -bc $(c) &&) :

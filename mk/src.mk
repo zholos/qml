@@ -1,9 +1,10 @@
 include $(dir $(lastword $(MAKEFILE_LIST)))common.mk
 
-VERSION := 0.4
+VERSION := 0.5
 
-OBJS := const.o libm.o cephes.o lapack.o conmax.o alloc.o util.o opt.o
-INCLUDES := alloc.h util.h opt.h wrap.h
+OBJS := const.o alloc.o util.o opt.o \
+        libm.o cephes.o lapack.o conmin.o conmax.o nlopt.o
+INCLUDES := alloc.h util.h opt.h wrap.h conmin.h conmax.h nlopt.h
 
 CFLAGS += -std=gnu99 -Wall -Wextra -Wno-missing-field-initializers
 DEFINES = -DQML_VERSION=$(VERSION) -DKXARCH=$(KXARCH) -DKXVER=$(KXVER)
@@ -20,7 +21,8 @@ build: qml.$(DLLEXT)
 
 qml.$(DLLEXT): $(OBJS) qml.symlist qml.mapfile
 	$(CC) $(FLAGS) -shared -o $@ $(OBJS) \
-	    -L../lib -lprob -lconmax \
+	    -L../lib -lprob -lconmax -lnlopt \
+	    $(LDFLAGS) \
 	    $(if $(BUILD_LAPACK),-llapack,$(LIBS_LAPACK)) \
 	    $(if $(BUILD_BLAS),-lrefblas,$(LIBS_BLAS)) \
 	    $(call ld_static,$(LIBS_FORTRAN)) \
@@ -41,17 +43,18 @@ qml.mapfile: qml.symlist
 
 
 ifneq ($(QHOME),)
+# don't export QHOME because q below should get it from the general environment
 install: build
-	cp qml.$(DLLEXT) $(QHOME)/$(KXARCH)/
-	cp qml.q         $(QHOME)/
+	cp qml.$(DLLEXT) '$(QHOME)'/$(KXARCH)/
+	cp qml.q         '$(QHOME)'/
 	
 uninstall:
-	rm -f -- $(QHOME)/$(KXARCH)/qml.$(DLLEXT)
-	rm -f -- $(QHOME)/qml.q
+	rm -f -- '$(QHOME)'/$(KXARCH)/qml.$(DLLEXT)
+	rm -f -- '$(QHOME)'/qml.q
 endif
 
 test: build
-	q test.q -cd -s 16
+	q test.q -cd -s 16 </dev/null
 
 clean_src:
 clean_misc:

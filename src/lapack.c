@@ -777,8 +777,8 @@ mls(K x, K y, int equi) {
 }
 
 static const struct optn ls_opt[] = {
-    { "equi", 0 },
-    { NULL }
+    [0] = { "equi", 0 },
+          { NULL }
 };
 
 K
@@ -849,8 +849,8 @@ mlsq(K x, K y, int svd) {
 }
 
 static const struct optn lsq_opt[] = {
-    { "svd", 0 },
-    { NULL }
+    [0] = { "svd", 0 },
+          { NULL }
 };
 
 K

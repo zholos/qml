@@ -15,8 +15,12 @@ callgrind.out.*
 work/
 lapack/work
 lapack/lapack-*/
+nlopt/work
+nlopt/nlopt
+nlopt/nlopt-*/
 /download/
 /include/
 /lib/
 debug/*.[chq]
 coverage/*.[chq]
+test/*.pyc
