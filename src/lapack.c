@@ -74,7 +74,7 @@ take_square_matrix(K x_, I* n, int* triangular, S* err) {
             repeat (i, *n)
                 a[j + i * *n] = kF(xK[j])[i];
 
-    q0(x);
+    if (x) q0(x);
     return a;
 }
 
