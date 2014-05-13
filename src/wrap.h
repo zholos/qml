@@ -28,7 +28,7 @@
                 F v = kF(wc__x)[wc__i];    \
                 kF(wc__r)[wc__i] = (call); \
             }                              \
-            r0(wc__x);                     \
+            q0(wc__x);                     \
             return wc__r;                  \
         }                                  \
     } while (0)
@@ -60,12 +60,12 @@ qml_##name(K x, K y) {                      \
         wrap_call_vector(x, func(v, u));    \
     }                                       \
     check_type(x = convert_F(x),);          \
-    check_type(y = convert_F(y), r0(x));    \
-    check_length(xn == y->n, r0(y); r0(x)); \
+    check_type(y = convert_F(y), q0(x));    \
+    check_length(xn == y->n, q0(y); q0(x)); \
     K r = ktn(KF, xn);                      \
     repeat (i, xn)                          \
         kF(r)[i] = func(xF[i], kF(y)[i]);   \
-    r0(y); r0(x);                           \
+    q0(y); q0(x);                           \
     return r;                               \
 }
 

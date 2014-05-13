@@ -122,10 +122,8 @@ convert_F(K x) {
                 qF(r, i) = qf(qK(x, i));
             else if (compatible_f(qK(x, i)))
                 qF(r, i) = convert_f(qK(x, i));
-            else {
-                r0(r);
-                return NULL;
-            }
+            else
+                return q0(r);
         break;
     default:
         return NULL;
