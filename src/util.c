@@ -173,8 +173,10 @@ convert_FFF(K x) {
         if (qt(v) != -KF && qt(v) != KF)
             goto copy;
     }
-    // list of KF shouldn't normally appear, so don't try to convert to vector
-    return r1(x);
+    // list of KF shouldn't normally appear, so don't try to convert to vector,
+    // but do convert () to 0#0.
+    if (qn(x))
+        return r1(x);
 
 copy:;
     K r = ktn(0, qn(x));

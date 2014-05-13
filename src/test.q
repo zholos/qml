@@ -3876,6 +3876,7 @@ pass:-1;while[2>pass+:1;
                   .qml.minx[y,`full`quiet`iter,0;f;1 -1]
                   `x`last`f`iter`sig;
           x=3;`type`nan~@[.qml.minx[y;abs;];;`$] each `,0n;
+          x=4;(0#0.)~last .qml.min[{y;0};(0;())];
           '`]};
     test["minx_opt[0;()]";"4 1%7"];
     test["minx_opt[1;()]";    "(4 1%7;-2%7;1)"];
@@ -3886,6 +3887,7 @@ pass:-1;while[2>pass+:1;
     test["minx_opt[2;`sbplx]";"(1;1 -1;3;1;1)"];
     test["minx_opt[3;()]";"1"];
     test["minx_opt[3;`nm`full]";"1"];
+    test["minx_opt[4;()]";"1"];
     test["minx_n[::;();{(a*a:x-1)+10*b*b:y-1+x*x};2#0]";"1 2"];
     test["minx_n[::;();{(a*a:x-1)+10*b*b:y-1+x*x};2#5]";"1 2"];
     test["minx_n[::;();{(a*a:x-1)+10*b*b:y-1+x*x};-10 10]";"1 2"];
