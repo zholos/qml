@@ -74,7 +74,7 @@ take_square_matrix(K x_, I* n, int* triangular, S* err) {
             repeat (i, *n)
                 a[j + i * *n] = kF(xK[j])[i];
 
-    r0(x);
+    if (x) q0(x);
     return a;
 }
 
@@ -94,7 +94,7 @@ take_matrix(K x_, I* ldr, I* m, I* n, int* column, S* err) {
             if (!*ldr)
                 *m = 0;
             memcpy(a, xF, *m * sizeof(F));
-            r0(x);
+            q0(x);
             *column = 1;
             return a;
         }
@@ -120,7 +120,7 @@ take_matrix(K x_, I* ldr, I* m, I* n, int* column, S* err) {
     repeat (j, *m)
         repeat (i, *n)
             a[j + i * *ldr] = kF(xK[j])[i];
-    if (x) r0(x);
+    if (x) q0(x);
     return a;
 }
 
@@ -179,7 +179,7 @@ make_matrix(const F* a, I ldr, I m, I n, int column) {
         K x = make_F_null(n);
         repeat (j, m)
             kK(r)[j] = r1(x);
-        r0(x);
+        q0(x);
     }
     return r;
 }

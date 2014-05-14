@@ -3876,6 +3876,7 @@ pass:-1;while[2>pass+:1;
                   .qml.minx[y,`full`quiet`iter,0;f;1 -1]
                   `x`last`f`iter`sig;
           x=3;`type`nan~@[.qml.minx[y;abs;];;`$] each `,0n;
+          x=4;(0#0.)~last .qml.min[{y;0};(0;())];
           '`]};
     test["minx_opt[0;()]";"4 1%7"];
     test["minx_opt[1;()]";    "(4 1%7;-2%7;1)"];
@@ -3886,6 +3887,7 @@ pass:-1;while[2>pass+:1;
     test["minx_opt[2;`sbplx]";"(1;1 -1;3;1;1)"];
     test["minx_opt[3;()]";"1"];
     test["minx_opt[3;`nm`full]";"1"];
+    test["minx_opt[4;()]";"1"];
     test["minx_n[::;();{(a*a:x-1)+10*b*b:y-1+x*x};2#0]";"1 2"];
     test["minx_n[::;();{(a*a:x-1)+10*b*b:y-1+x*x};2#5]";"1 2"];
     test["minx_n[::;();{(a*a:x-1)+10*b*b:y-1+x*x};-10 10]";"1 2"];
@@ -4165,6 +4167,116 @@ pass:-1;while[2>pass+:1;
     test["wrap_F_cov[.qml.kcdf]";"1b"];
     test["wrap_F_cov[.qml.kicdf]";"1b"];
     test[".qml.kicdf 1e-9";"0n"];
+    lapack_nn_type:{
+        f:@[{x y;}x;;`$];
+        / too many calls in a single test makes debug_alloc loop slow
+        $[y=0;all(::)~'f each((0 0;0 0.);(0 0.;0 0));
+          y=1;all`type~'f each(0.;`;0 0.;();
+            (0.;0 0.);(0.;0 0);(0 0.;0.);(0 0;0.));
+          y=2;all`length~'f each(enlist 0 0.;
+            (0 0.;0 0 0.);(0 0;0 0 0.);(0 0 0.;0 0.);(0 0 0;0 0.));
+          '`]};
+    test["lapack_nn_type[.qml.mdet;0]";"1b"];
+    test["lapack_nn_type[.qml.mdet;1]";"1b"];
+    test["lapack_nn_type[.qml.mdet;2]";"1b"];
+    test["lapack_nn_type[.qml.minv;0]";"1b"];
+    test["lapack_nn_type[.qml.minv;1]";"1b"];
+    test["lapack_nn_type[.qml.minv;2]";"1b"];
+    test["lapack_nn_type[.qml.mev;0]";"1b"];
+    test["lapack_nn_type[.qml.mev;1]";"1b"];
+    test["lapack_nn_type[.qml.mev;2]";"1b"];
+    test["lapack_nn_type[.qml.mchol;0]";"1b"];
+    test["lapack_nn_type[.qml.mchol;1]";"1b"];
+    test["lapack_nn_type[.qml.mchol;2]";"1b"];
+    lapack_mn_type:{
+        f:@[{x y;}x;;`$];
+        $[y=0;all(::)~'f each((0 0 0;0 0 0.);(0 0 0.;0 0 0));
+          y=1;all`type~'f each(0.;`;0 0.;();enlist 0#0.;
+            (0.;0 0.);(0.;0 0);(0 0.;0.);(0 0;0.));
+          y=2;all`length~'f each(
+            (0 0.;0 0 0.);(0 0;0 0 0.);(0 0.;0 0.;0 0 0.);(0 0;0 0.;0 0 0.));
+          '`]};
+    test["lapack_mn_type[.qml.mqr;0]";"1b"];
+    test["lapack_mn_type[.qml.mqr;1]";"1b"];
+    test["lapack_mn_type[.qml.mqr;2]";"1b"];
+    test["lapack_mn_type[.qml.mqrp;0]";"1b"];
+    test["lapack_mn_type[.qml.mqrp;1]";"1b"];
+    test["lapack_mn_type[.qml.mqrp;2]";"1b"];
+    test["lapack_mn_type[.qml.mlup;0]";"1b"];
+    test["lapack_mn_type[.qml.mlup;1]";"1b"];
+    test["lapack_mn_type[.qml.mlup;2]";"1b"];
+    test["lapack_mn_type[.qml.msvd;0]";"1b"];
+    test["lapack_mn_type[.qml.msvd;1]";"1b"];
+    test["lapack_mn_type[.qml.msvd;2]";"1b"];
+    lapack_nn_np_type:{
+        f:.[{x[y;z];}x;;`$];
+        $[y=0;all(::)~'f each(((0 0;0 0.);0 0);(((0 0;0 0.);(0 0 0.;0 0 0))));
+          y=1;all`type~'f each(``;(`;0 0);((0 0;0 0.);`);
+            ((0 0;0 0.);enlist 0#0));
+          y=2;all`length~'f each(((0 0.;0 0 0.);0 0);((0 0;0 0.);(0 0;0 0 0.)));
+          y=3;all`length~'f each(((0 0;0 0.);0 0 0);((0 0;0 0.);(0 0;0 0;0 0)));
+          / not for .qml.mm:
+          y=4;`length~f((0 0 0;0 0 0);0 0 0);
+          '`]};
+    lapack_mn_np_type:{
+        f:.[{x[y;z];}x;;`$];
+        $[y=0;(::)~f((0 0 0;0 0 0);0 0 0);
+          '`]};
+    lapack_0n_np_type:{
+        f:.[{x[y;z];}x;;`$];
+        $[y=0;all(::)~'f each
+            (((1 1;0 1);0 0);((0 1;0 0);0 0);((1 0;1 1);0 0);((0 0;1 0);0 0));
+          y=1;all`domain~'f each
+            (((1 1;1 1);0 0);((0 1;1 0);0 0);((1 0 1;1 1 0;0 0 1);0 0 0));
+          '`]};
+    test["lapack_nn_np_type[.qml.mm;0]";"1b"];
+    test["lapack_nn_np_type[.qml.mm;1]";"1b"];
+    test["lapack_nn_np_type[.qml.mm;2]";"1b"];
+    test["lapack_nn_np_type[.qml.mm;3]";"1b"];
+    test["lapack_mn_np_type[.qml.mm;0]";"1b"];
+    test["lapack_nn_np_type[.qml.ms;0]";"1b"];
+    test["lapack_nn_np_type[.qml.ms;1]";"1b"];
+    test["lapack_nn_np_type[.qml.ms;2]";"1b"];
+    test["lapack_nn_np_type[.qml.ms;3]";"1b"];
+    test["lapack_nn_np_type[.qml.ms;4]";"1b"];
+    test["lapack_0n_np_type[.qml.ms;0]";"1b"];
+    test["lapack_0n_np_type[.qml.ms;1]";"1b"];
+    test["lapack_nn_np_type[.qml.mls;0]";"1b"];
+    test["lapack_nn_np_type[.qml.mls;1]";"1b"];
+    test["lapack_nn_np_type[.qml.mls;2]";"1b"];
+    test["lapack_nn_np_type[.qml.mls;3]";"1b"];
+    test["lapack_nn_np_type[.qml.mls;4]";"1b"];
+    test["lapack_nn_np_type[.qml.mlsx`equi;0]";"1b"];
+    test["lapack_nn_np_type[.qml.mlsx`equi;1]";"1b"];
+    test["lapack_nn_np_type[.qml.mlsx`equi;2]";"1b"];
+    test["lapack_nn_np_type[.qml.mlsx`equi;3]";"1b"];
+    test["lapack_nn_np_type[.qml.mlsx`equi;4]";"1b"];
+    lsq_type:{
+        f:.[{.qml.mlsq[x;y];};;`$];
+        $[x=0;all(::)~'f each(((0 0;0 0);0 0);((0 0;0 0);(0 0;0 0)));
+          x=1;all(::)~'f each(((0 0;0 0;0 0);0 0 0);((0 0 0;0 0 0);0 0));
+          x=2;all(::)~'f each
+            (((0 0;0 0;0 0);(0 0;0 0;0 0));((0 0 0;0 0 0);(0 0;0 0)));
+          x=3;all`type~'f each(``;(`;0 0);((0 0;0 0);`));
+          x=4;all`length~'f each(((0 0;0 0 0);0 0);((0 0;0 0);(0 0;0 0 0)));
+          x=5;all`length~'f each
+            (((0 0 0;0 0 0);0 0 0);((0 0 0;0 0 0);(0 0;0 0;0 0)));
+            '`]};
+    test["lsq_type 0";"1b"];
+    test["lsq_type 1";"1b"];
+    test["lsq_type 2";"1b"];
+    test["lsq_type 3";"1b"];
+    test["lsq_type 4";"1b"];
+    test["lsq_type 5";"1b"];
+    poly_type:{
+        f:@[{.qml.poly x;};;`$];
+        $[x=0;all(::)~'f each(1 0;(1.;0);(1;0.);(1.;0 0.));
+          x=1;all`type~'f each(`;``;(0.;0 0;`;0.);0.;0;(0.;(0.;0 0.)));
+          x=2;all`length~'f each(0#0.;();(0.;());(0.;1#0.);(0.;3#0 0 0.));
+          '`]};
+    test["poly_type 0";"1b"];
+    test["poly_type 1";"1b"];
+    test["poly_type 2";"1b"];
 
     mem[pass]:first system"w"];
 

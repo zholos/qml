@@ -1,3 +1,7 @@
+Version 0.5.1 on 2014-05-14:
+  * Fixed crash in square matrix functions when called with inappropriate type
+    (e.g., .qml.mdet[`]).
+
 Version 0.5 on 2013-12-31:
   * Linked to NLopt to provide more optimization algorithms, exposed as `nl and
     `sbplx options for 'min' and `cobyla option for 'conmin'.
