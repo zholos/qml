@@ -3080,32 +3080,45 @@ pass:-1;while[2>pass+:1;
     test["lapack_nn_np_type[.qml.mlsx`equi;2]";"1b"];
     test["lapack_nn_np_type[.qml.mlsx`equi;3]";"1b"];
     test["lapack_nn_np_type[.qml.mlsx`equi;4]";"1b"];
-    lsq_type:{
-        f:.[{.qml.mlsq[x;y];};;`$];
-        $[x=0;all(::)~'f each(((0 0;0 0);0 0);((0 0;0 0);(0 0;0 0)));
-          x=1;all(::)~'f each(((0 0;0 0;0 0);0 0 0);((0 0 0;0 0 0);0 0));
-          x=2;all(::)~'f each
+    lapack_mn_mp_type:{
+        f:.[{x[y;z];}x;;`$];
+        $[y=0;all(::)~'f each(((0 0;0 0);0 0);((0 0;0 0);(0 0;0 0)));
+          y=1;all(::)~'f each(((0 0;0 0;0 0);0 0 0);((0 0 0;0 0 0);0 0));
+          y=2;all(::)~'f each
             (((0 0;0 0;0 0);(0 0;0 0;0 0));((0 0 0;0 0 0);(0 0;0 0)));
-          x=3;all`type~'f each(``;(`;0 0);((0 0;0 0);`));
-          x=4;all`length~'f each(((0 0;0 0 0);0 0);((0 0;0 0);(0 0;0 0 0)));
-          x=5;all`length~'f each
+          y=3;all`type~'f each(``;(`;0 0);((0 0;0 0);`));
+          y=4;all`length~'f each(((0 0;0 0 0);0 0);((0 0;0 0);(0 0;0 0 0)));
+          y=5;all`length~'f each
             (((0 0 0;0 0 0);0 0 0);((0 0 0;0 0 0);(0 0;0 0;0 0)));
             '`]};
-    test["lsq_type 0";"1b"];
-    test["lsq_type 1";"1b"];
-    test["lsq_type 2";"1b"];
-    test["lsq_type 3";"1b"];
-    test["lsq_type 4";"1b"];
-    test["lsq_type 5";"1b"];
+    test["lapack_mn_mp_type[.qml.mlsq;0]";"1b"];
+    test["lapack_mn_mp_type[.qml.mlsq;1]";"1b"];
+    test["lapack_mn_mp_type[.qml.mlsq;2]";"1b"];
+    test["lapack_mn_mp_type[.qml.mlsq;3]";"1b"];
+    test["lapack_mn_mp_type[.qml.mlsq;4]";"1b"];
+    test["lapack_mn_mp_type[.qml.mlsq;5]";"1b"];
+    test["lapack_mn_mp_type[.qml.mlsqx`svd;0]";"1b"];
+    test["lapack_mn_mp_type[.qml.mlsqx`svd;1]";"1b"];
+    test["lapack_mn_mp_type[.qml.mlsqx`svd;2]";"1b"];
+    test["lapack_mn_mp_type[.qml.mlsqx`svd;3]";"1b"];
+    test["lapack_mn_mp_type[.qml.mlsqx`svd;4]";"1b"];
+    test["lapack_mn_mp_type[.qml.mlsqx`svd;5]";"1b"];
     poly_type:{
         f:@[{.qml.poly x;};;`$];
         $[x=0;all(::)~'f each(1 0;(1.;0);(1;0.);(1.;0 0.));
           x=1;all`type~'f each(`;``;(0.;0 0;`;0.);0.;0;(0.;(0.;0 0.)));
           x=2;all`length~'f each(0#0.;();(0.;());(0.;1#0.);(0.;3#0 0 0.));
+          x=3;all(::)~'f each((1 0;1);(0 1;1));
+          x=4;all`roots~'f each(0 1;(0;1 0);(0 0;1));
           '`]};
     test["poly_type 0";"1b"];
     test["poly_type 1";"1b"];
     test["poly_type 2";"1b"];
+    test["poly_type 3";"1b"];
+    test["poly_type 4";"1b"];
+    lapack_opt:{
+        all`opt~'@[get;;`$]each((.qml.mlsx;`eqiu;0;0);(.qml.mlsqx;`sdv;0;0))};
+    test["lapack_opt[]";"1b"];
 
     mem[pass]:first system"w"];
 

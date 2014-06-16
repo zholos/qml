@@ -15,7 +15,7 @@ endif
 
 do_patch:
 # Shouldn't need the WIN32 alternatives with gcc, and they conflict with math.h
-	$(SEDI) 's/#ifdef WIN32/#if 0/' work/k.h
+	$(SEDI) 's/#if.*WIN32.*/#if 0/' work/k.h
 
 ifneq ($(Q_LIB),)
 # Using q.lib as -lq appears to work, but crashes q on load.

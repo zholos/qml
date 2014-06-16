@@ -710,7 +710,7 @@ qml_poly(K x_) {
     free_F(rwork);
 
     if (info) {
-        if (!err) err = "roots";
+        if (!err) err = "roots"; // "Failures are rare." - dhseqr.f
         n = 0;
     }
 
