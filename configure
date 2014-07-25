@@ -468,8 +468,8 @@ fi
 
 # Utilities
 
-makeyesno "checking if patch works..." \
-          "patch is required." \
+makeyesno "checking if patch program works..." \
+          "patch program is required." \
           patch
 
 makeselect "looking for http downloader..." \
@@ -480,8 +480,8 @@ makeselect "looking for http downloader..." \
 echo_n "phoning home... "
 echo "just kidding"
 
-makeselect "looking for sha256..." \
-           "sha256 is required." \
+makeselect "looking for sha256 program..." \
+           "sha256 program is required." \
            SHA256 sha256 \
            sha256 sha256sum
 
