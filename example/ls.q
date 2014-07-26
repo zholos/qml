@@ -1,4 +1,4 @@
-/ Different ways to solve a system of linear equations
+/ Different ways to solve a system of linear equations: b=A mm x
 
 \l qml.q
 

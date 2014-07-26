@@ -1,4 +1,4 @@
-/ Different ways to solve a linear least squares problem
+/ Different ways to solve a linear least squares problem: min ||b-A mm x||
 
 \l qml.q
 
