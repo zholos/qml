@@ -63,5 +63,4 @@ do_install: install_libs
 	cp lapack.h ../include/
 
 do_clean:
-	rm -f work
-	rm -rf lapack-*/
+	rm -rf lapack-[0-9]* work

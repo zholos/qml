@@ -7,7 +7,7 @@ nlopt-2.4.2.tar.gz.sha256 = \
 do_extract: ../download/nlopt-2.4.2.tar.gz
 	tar xzf $<
 	ln -sf nlopt-2.4.2 nlopt
-	mkdir work
+	mkdir -p work
 
 # C++ code is not enabled, but configure fails without CXXCPP, so fake it.
 do_configure:
@@ -51,5 +51,4 @@ do_install:
 	cp $(addprefix nlopt/,$(HEADERS)) work/nlopt-util.h ../include/
 
 do_clean:
-	rm -f nlopt
-	rm -rf nlopt-*/ work/
+	rm -rf nlopt nlopt-[0-9]* work
