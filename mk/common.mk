@@ -39,6 +39,7 @@ fetch = $(fetch/$(FETCH))
 
 sha256/sha256    = sha256
 sha256/sha256sum = sha256sum | cut -b 1-64
+sha256/openssl   = openssl sha256 -r | cut -b 1-64
 
 sha256 = $(sha256/$(SHA256))
 

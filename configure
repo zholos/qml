@@ -494,7 +494,7 @@ echo "just kidding"
 makeselect "looking for sha256 program..." \
            "sha256 program is required." \
            SHA256 sha256 \
-           sha256 sha256sum
+           sha256 sha256sum openssl
 
 
 
