@@ -5,11 +5,11 @@
  #  desired load options for your machine.
  #
 -FORTRAN  = gfortran 
--OPTS     = -O2
+-OPTS     = -O2 -frecursive
 +#FORTRAN  = gfortran 
-+#OPTS     = -O2
++#OPTS     = -O2 -frecursive
  DRVOPTS  = $(OPTS)
--NOOPT    = -O0
+-NOOPT    = -O0 -frecursive
 -LOADER   = gfortran
 -LOADOPTS =
 +NOOPT    = $(OPTS) -O0

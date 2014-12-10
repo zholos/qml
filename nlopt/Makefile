@@ -1,12 +1,12 @@
 include ../mk/pkg.mk
 
-nlopt-2.4.1.tar.gz.url = http://ab-initio.mit.edu/nlopt/nlopt-2.4.1.tar.gz
-nlopt-2.4.1.tar.gz.sha256 = \
-    fe9ade54ed79c87f682540c34ad4e610ff32c9a43c52c6ea78cef6adcd5c1319
+nlopt-2.4.2.tar.gz.url = http://ab-initio.mit.edu/nlopt/nlopt-2.4.2.tar.gz
+nlopt-2.4.2.tar.gz.sha256 = \
+    8099633de9d71cbc06cd435da993eb424bbcdbded8f803cdaa9fb8c6e09c8e89
 
-do_extract: ../download/nlopt-2.4.1.tar.gz
+do_extract: ../download/nlopt-2.4.2.tar.gz
 	tar xzf $<
-	ln -sf nlopt-2.4.1 nlopt
+	ln -sf nlopt-2.4.2 nlopt
 	mkdir work
 
 do_configure:
