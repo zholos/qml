@@ -205,6 +205,7 @@ makeenv () {
         CFLAGS="$CFLAGS $CFLAGS_FLOAT" \
         FFLAGS="$FFLAGS $FFLAGS_FLOAT $FFLAGS_THREAD" \
         FLAGS="$FLAGS $FLAGS_BITS $FLAGS_WINDOWS $FLAGS_PIC $FLAGS_PIPE" \
+        XAR="$XAR" \
         TOOLPREFIX="$TOOLPREFIX" \
         XCC="$XCC" \
         CONFIG="$CONFIG" \
@@ -331,8 +332,11 @@ echo_n "looking for Fortran compiler... "
 if [ -n "$FC" ]; then
     echo "$FC (selected)"
 elif [ -n "$CC_selected" ] && [ -z "${CC_selected%%*gcc*}" ]; then
-    FC=${CC_selected%gcc*}gfortran${CC_selected##*gcc}
-    echo "$FC (inferred)"
+    makeselect "" \
+               "a compiler is required." \
+               FC f_version \
+               "${CC_selected%gcc*}gfortran${CC_selected##*gcc}" \
+               gfortran
 else
     FC=gfortran
     echo "$FC (default)"
@@ -368,8 +372,12 @@ echo_n "looking for binutils... "
 if [ -n "${TOOLPREFIX+n}" ]; then
     echo "${TOOLPREFIX}ar (selected)"
 elif [ -n "$CC_selected" ] && [ -z "${CC_selected%%*-gcc*}" ]; then
-    TOOLPREFIX=${CC_selected%gcc*}
-    echo "${TOOLPREFIX}ar (inferred)"
+    makeselect "" \
+               "binutils are required." \
+               XAR xar_version \
+               "${CC_selected%gcc*}ar" \
+               ar
+    TOOLPREFIX=${XAR%ar}
 else
     echo "${TOOLPREFIX}ar (default)"
 fi
@@ -502,6 +510,7 @@ CFLAGS         := $CFLAGS $CFLAGS_FLOAT
 FFLAGS         := $FFLAGS $FFLAGS_FLOAT $FFLAGS_THREAD
 FFLAGS_NTHREAD := $FFLAGS $FFLAGS_FLOAT
 FLAGS          := $FLAGS $FLAGS_BITS $FLAGS_WINDOWS $FLAGS_PIC $FLAGS_PIPE
+XAR            := $XAR
 TOOLPREFIX     := $TOOLPREFIX
 XCC            := $XCC
 CONFIG         := $CONFIG

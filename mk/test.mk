@@ -81,6 +81,9 @@ test/xc_run: test/xc_link
 	./conftest.exe
 
 
+test/f_version:
+	$(FC) --version
+
 test/f_compile: conftest.f
 	$(FC) -Werror -c -o conftest.o $< \
 	    $(FLAGS) $(FFLAGS)
@@ -97,6 +100,9 @@ test/f_compile_c_link: conftest.f conftest.c
 	$(CC) -Werror -o conftest.exe conftest.o conftest.c \
 	    $(FLAGS) $(CFLAGS) $(LINK_FLAGS)
 
+
+test/xar_version:
+	$(XAR) --version
 
 test/shared_link: conftest.c
 	echo _f                          >conftest.symlist
