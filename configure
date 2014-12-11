@@ -372,10 +372,13 @@ echo_n "looking for binutils... "
 if [ -n "${TOOLPREFIX+n}" ]; then
     echo "${TOOLPREFIX}ar (selected)"
 elif [ -n "$CC_selected" ] && [ -z "${CC_selected%%*-gcc*}" ]; then
+    # Cygwin installs x86_64-w64-mingw32-ar but plain MinGW-w64 doesn't,
+    # though it has an appropriate ar in the same directory.
     makeselect "" \
                "binutils are required." \
                XAR xar_version \
                "${CC_selected%gcc*}ar" \
+               "$(dirname "$(which "$CC_selected")")/ar" \
                ar
     TOOLPREFIX=${XAR%ar}
 else
