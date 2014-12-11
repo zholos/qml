@@ -103,16 +103,17 @@ else
                     AMD64:*|*:AMD64) KXARCH=w64 ;;
                     *)               KXARCH=w32 ;;
                 esac ;;
-            Linux:x86_64)               KXARCH=l64 ;;
-            Linux:*)                    KXARCH=l32 ;;
-            Darwin:x86_64)              KXARCH=m64 ;;
-            Darwin:*)                   KXARCH=m32 ;;
-            SunOS:*) case "$(quiet isainfo):$(quiet isainfo -b)" in
-                       *i386*:64) KXARCH=v64 ;;
-                       *i386*:32) KXARCH=v32 ;;
-                       *:64)      KXARCH=s64 ;;
-                       *:32)      KXARCH=s32 ;;
-                   esac ;;
+            Linux:x86_64)  KXARCH=l64 ;;
+            Linux:*)       KXARCH=l32 ;;
+            Darwin:x86_64) KXARCH=m64 ;;
+            Darwin:*)      KXARCH=m32 ;;
+            SunOS:*)
+                case "$(quiet isainfo):$(quiet isainfo -b)" in
+                    *i386*:64) KXARCH=v64 ;;
+                    *i386*:32) KXARCH=v32 ;;
+                    *:64)      KXARCH=s64 ;;
+                    *:32)      KXARCH=s32 ;;
+                esac ;;
         esac
         if [ -n "$KXARCH" ]; then
             echo "$KXARCH (detected from host)"
