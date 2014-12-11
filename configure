@@ -237,7 +237,7 @@ makeyesno () {
 makeselect () {
     echo_n "$1${1:+ }"; fail=$2; var=$3; test=$4; shift 4
     while [ $# != 0 ]; do
-        eval $var=\'$1\'
+        eval $var=\$1
         if makeenv "testing $test with $var='$1':" -f mk/test.mk test/"$test"
         then
             if [ -n "$1" ]; then
