@@ -1,6 +1,6 @@
 include $(dir $(lastword $(MAKEFILE_LIST)))common.mk
 
-VERSION := 0.5.2
+VERSION := 0.5.3
 
 OBJS := const.o alloc.o util.o opt.o \
         libm.o cephes.o lapack.o conmin.o conmax.o nlopt.o

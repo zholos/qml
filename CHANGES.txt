@@ -1,3 +1,6 @@
+Version 0.5.3 on 2014-12-12:
+  * Support compiling on MSYS.
+
 Version 0.5.2 on 2014-06-16:
   * Fixed compiling on Cygwin with latest k.h.
 

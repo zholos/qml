@@ -1,15 +1,15 @@
 include ../mk/pkg.mk
 
-lapack-3.4.2.tgz.url = $(NETLIB_DIR)/lapack/lapack-3.4.2.tgz
-lapack-3.4.2.tgz.sha256 = \
-    60a65daaf16ec315034675942618a2230521ea7adf85eea788ee54841072faf0
+lapack-3.5.0.tgz.url = $(NETLIB_DIR)/lapack/lapack-3.5.0.tgz
+lapack-3.5.0.tgz.sha256 = \
+    9ad8f0d3f3fb5521db49f2dd716463b8fb2b6bc9dc386a9956b8c6144f726352
 
 # BUILD_BLAS sets BUILD_LAPACK too
 ifneq ($(BUILD_LAPACK),)
 
-do_extract: ../download/lapack-3.4.2.tgz
+do_extract: ../download/lapack-3.5.0.tgz
 	tar xzf $<
-	ln -sf lapack-3.4.2 work
+	ln -sf lapack-3.5.0 work
 
 
 do_patch: make.patch
@@ -63,5 +63,4 @@ do_install: install_libs
 	cp lapack.h ../include/
 
 do_clean:
-	rm -f work
-	rm -rf lapack-*/
+	rm -rf lapack-[0-9]* work
