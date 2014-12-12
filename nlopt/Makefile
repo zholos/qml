@@ -9,9 +9,11 @@ do_extract: ../download/nlopt-2.4.2.tar.gz
 	ln -sf nlopt-2.4.2 nlopt
 	mkdir work
 
+# C++ code is not enabled, but configure fails without CXXCPP, so fake it.
 do_configure:
 	cd nlopt && ./configure \
 	    CC='$(CC)' \
+	    CXXCPP='$(CC) -E -x c' \
 	    CFLAGS='$(FLAGS) $(CFLAGS)'
 
 # Don't need most of the routines from general.c but they pull in other files.
