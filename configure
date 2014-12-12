@@ -92,8 +92,8 @@ if [ -n "$KXARCH" ]; then
     echo "$KXARCH (selected)"
 else
     # q doesn't run interactively in Cygwin
-    echo '1 string .z.o;' >conftest.q
-    KXARCH=`quiet q conftest.q`
+    echo '-1 string .z.o;' >conftest.q
+    KXARCH=`quiet q conftest.q | tail -n 1`
     if [ -n "$KXARCH" ]; then
         echo "$KXARCH (detected from q)"
     else
@@ -127,8 +127,8 @@ echo_n "q version... "
 if [ -n "$KXVER" ]; then
     echo "$KXVER (selected)"
 else
-    echo '1 string floor .Q.k;' >conftest.q
-    KXVER=`quiet q conftest.q`
+    echo '-1 string floor .Q.k;' >conftest.q
+    KXVER=`quiet q conftest.q | tail -n 1`
     if [ -n "$KXVER" ]; then
         echo "$KXVER (detected from q)"
     else
@@ -146,8 +146,8 @@ if [ -n "${QHOME_CONFIG+n}" ]; then
     echo "${QHOME_CONFIG:-none} (selected)"
 else
     # q may be a script that sets QHOME
-    echo '1 getenv`QHOME;' >conftest.q
-    QHOME_CONFIG=`quiet q conftest.q`
+    echo '-1 getenv`QHOME;' >conftest.q
+    QHOME_CONFIG=`quiet q conftest.q | tail -n 1`
     if [ -n "$QHOME_CONFIG" ]; then
         echo "$QHOME_CONFIG (detected from q)"
     else
