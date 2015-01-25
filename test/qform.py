@@ -44,21 +44,25 @@ def qform(self, preserve = False):
             return encode_vector([f], [t])
         return f
 
-    def number_form(n):
+    def rational(n):
         if isinstance(n, (int, long)):
-            if abs(n) < 2**31-1:
-                return str(n), "i"
-            if abs(n) < 2**63-1:
-                return str(n), "j"
-            return number_form(Decimal(n))
-
+            return n, 1
         if isinstance(n, Fraction):
-            if n.denominator == 1:
-                return number_form(n.numerator)
-            forms, types = zip(*map(number_form, (n.numerator, n.denominator)))
-            if all([t in ("i", "j") for t in types]):
-                return "%".join(map(encode_item, forms, types)), "S"
-            return number_form(n.numerator / Decimal(n.denominator))
+            return n.numerator, n.denominator
+
+    def number_form(n):
+        if rational(n):
+            p, q = rational(n)
+            if q == 1:
+                if abs(n) < 2**31-1:
+                    return str(n), "i"
+                if abs(n) < 2**63-1:
+                    return str(n), "j"
+            else:
+                forms, types = zip(*map(number_form, (p, q)))
+                if all([t in ("i", "j") for t in types]):
+                    return "%".join(map(encode_item, forms, types)), "S"
+            return number_form(p / Decimal(q))
 
         if isinstance(n, Decimal):
             q = abs(n).log10().quantize(1, rounding=decimal.ROUND_FLOOR)
@@ -135,7 +139,7 @@ def qform(self, preserve = False):
         return q, "v"
 
     def value_form(self):
-        if isinstance(self, (int, long, Fraction, Decimal, NoneType)):
+        if rational(self) or isinstance(self, (Decimal, NoneType)):
             return number_form(self)
         if isinstance(self, (list, tuple)):
             return list_form(self)
