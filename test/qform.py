@@ -21,7 +21,7 @@ def qform(self, preserve = False):
     #     `-------- needs brackets as left argument
 
     # gathers:
-    #   *             -> "a"/"A"
+    #   *             -> "s"/"S"
     #   ["i"/"j"/"f"] -> "v"
     #   [*]           -> "v"/"V"
 
