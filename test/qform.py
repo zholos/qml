@@ -12,7 +12,7 @@ decimal.getcontext().prec = 50
 __all__ = ["qform", "qstr", "output", "prec", "reps", "test"]
 
 
-def qform(self, preserve = False):
+def qform(self):
     if hasattr(self, 'qform'):
         return self.qform()
 
@@ -131,15 +131,14 @@ def qform(self, preserve = False):
             return hq, "V"
 
         q = "(%s)" % ";".join(map(encode_item, forms, types))
-        if not preserve:
-            f, d = common_denominator(self)
-            if d != 1:
-                f, t = list_form(f)
-                if t == "V":
-                    f = "(%s)" % f
-                cdq = f + "%" + encode_item(*number_form(d))
-                if len(cdq) < len(q):
-                    return cdq, "V"
+        f, d = common_denominator(self)
+        if d != 1:
+            f, t = list_form(f)
+            if t == "V":
+                f = "(%s)" % f
+            cdq = f + "%" + encode_item(*number_form(d))
+            if len(cdq) < len(q):
+                return cdq, "V"
 
         return q, "v"
 

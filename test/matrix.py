@@ -228,16 +228,14 @@ class Matrix:
         def cell(i, j):
             return Fraction.from_float(math.tan((1+i*n+j)*scale)). \
                             limit_denominator(10)
-        matrix = Matrix([[cell(i, j) for j in range(m)] for i in range(n)])
-        matrix.preserve = True
-        return matrix
+        return Matrix([[cell(i, j) for j in range(m)] for i in range(n)])
 
     @staticmethod
     def null_matrix(n, m):
         return Matrix([[None] * m for i in range(n)])
 
     def qform(self):
-        return qform(self.rows, preserve = getattr(self, 'preserve', False))
+        return qform(self.rows)
 
 
 class Random: # meaning arbitrary, not unpredictable
