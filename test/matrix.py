@@ -220,10 +220,8 @@ class Matrix:
 
     @staticmethod
     def hilbert_matrix(n, m):
-        matrix = Matrix([[Fraction(1, 1+i+j) for j in range(m)]
-                                             for i in range(n)])
-        matrix.preserve = True
-        return matrix
+        return Matrix([[Fraction(1, 1+i+j) for j in range(m)]
+                                           for i in range(n)])
 
     @staticmethod
     def random_matrix(n, m, scale = 1):

@@ -125,6 +125,11 @@ def qform(self, preserve = False):
         if all([t in ("i", "j", "f") for t in types]):
             return encode_vector(forms, types), "v"
 
+        # special case for Hilbert matrix
+        if all(rational(e) and rational(e)[0] == 1 for e in self):
+            hq = "1%"+encode_item(*list_form([rational(e)[1] for e in self]))
+            return hq, "V"
+
         q = "(%s)" % ";".join(map(encode_item, forms, types))
         if not preserve:
             f, d = common_denominator(self)
