@@ -368,7 +368,7 @@ makeselect "selecting Fortran floating-point options..." \
 makeselect "selecting Fortran thread safety options..." \
            "-frecursive is necessary for thread-safety." \
            FFLAGS_THREAD f_link \
-           -frecursive
+           -frecursive -fmax-stack-var-size=2000000000
 
 
 # nm required below
