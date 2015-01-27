@@ -32,16 +32,25 @@ subjects = [
     Matrix([[1, 3], [2, 6]])
 ]
 
+large_subjects = [
+    "{til[x 1]+/:1+til x 0} 100 100",
+    "{til[x 1]+/:1+til x 0} 20 100",
+    "{til[x 1]+/:1+til x 0} 100 20",
+    "{y#tan x*1+til prd y}[1] 100 100",
+    "{y#tan x*1+til prd y}[sqrt 2] 20 100",
+    "{y#tan x*1+til prd y}[sqrt 3] 100 20"
+]
+
 def test_msvd():
     output("""\
-    msvd_:{
+    msvd_:{[b;x]
         $[3<>count usv:.qml.msvd x;::;
           not (.qml.mdim[u:usv 0]~2#d 0) and (.qml.mdim[v:usv 2]~2#d 1) and
             .qml.mdim[s:usv 1]~d:.qml.mdim x;::;
           not mortho[u] and mortho[v] and
             all[0<=.qml.mdiag s] and mzero s _'til d 0;::;
           not mzero x-.qml.mm[u] .qml.mm[s] flip v;::;
-          (p*/:m#/:u;m#m#/:s;(p:1-2*0>m#u 0)*/:(m:min d)#/:v)]};""")
+          b;1b;(p*/:m#/:u;m#m#/:s;(p:1-2*0>m#u 0)*/:(m:min d)#/:v)]};""")
 
     for A in subjects:
         U, S, V = map(mp.matrix, mp.svd(mp.matrix(A)))
@@ -50,7 +59,12 @@ def test_msvd():
         U *= p
         S = mp.diag(S)
         V = V.T * p
-        test("msvd_", A, (U, S, V))
+        test("msvd_[0b", A, (U, S, V))
+
+    reps(250)
+    for Aq in large_subjects:
+        test("msvd_[1b", qstr(Aq), qstr("1b"))
+    reps(10000)
 
 
 def tests():
