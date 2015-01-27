@@ -14,8 +14,8 @@ SEDI = sed -i.tmp
 
 # Superfluous leading underscore appears sometimes under Windows
 sed_s+ = [[:space:]]\{1,\}
-nm_exports = $(NM) $(1) | sed -n \
-    's/^[[:alnum:]]*$(sed_s+)T$(sed_s+)_*\([[:alnum:]_]\{1,\}\)$$/\1/p'
+nm_grep = $(NM) -P $(2) | sed -n 's/^\([^ ]\{1,\}\) $(1)\( .*\)*$$/\1/p'
+nm_exports = $(call nm_grep,T,$(1))
 
 ld_export/-exported_symbols_list = $(LD_EXPORT) $(1).symlist
 ld_export/-Wl                    = $(LD_EXPORT),$(1).mapfile
