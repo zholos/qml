@@ -39,10 +39,13 @@ def qform(self):
             q += "j"
         return q
 
-    def encode_item(f, t):
+    def encode_item(f, t, left=False):
         if t in ("i", "j", "f"):
             return encode_vector([f], [t])
-        return f
+        elif left and t in ("S", "V"):
+            return "(%s)" % f
+        else:
+            return f
 
     def rational(n):
         if isinstance(n, (int, long)):
@@ -83,29 +86,20 @@ def qform(self):
         def lcm(a, b):
             return a * b // fractions.gcd(a, b)
 
-        def find(f, d):
-            for e in f:
-                if isinstance(e, Fraction):
-                    d = lcm(d, e.denominator)
-                elif isinstance(e, (list, tuple)):
-                    d = find(e, d)
-                elif not isinstance(e, (int, long)):
-                    raise Exception()
-            return d
-        d = find(f, 1)
+        def mul(a, b):
+            if isinstance(a, (list, tuple)):
+                return [mul(x, b) for x in a]
+            else:
+                return a * b
 
-        def extract(f):
-            l = []
-            for e in f:
-                if isinstance(e, (list, tuple)):
-                    l.append(extract(e))
-                else:
-                    n = Fraction(e) * d
-                    if n.denominator != 1:
-                        raise Exception()
-                    l.append(n.numerator)
-            return l
-        return extract(f), d
+        if isinstance(f, (list, tuple)):
+            ns, ds = zip(*map(common_denominator, f))
+            if None not in ds:
+                cd = reduce(lcm, ds, 1)
+                return [mul(n, cd // d) for n, d in zip(ns, ds)], cd
+        if rational(f):
+            return rational(f)
+        return None, None
 
     def list_form(self):
         if len(self) == 0:
@@ -130,17 +124,16 @@ def qform(self):
             hq = "1%"+encode_item(*list_form([rational(e)[1] for e in self]))
             return hq, "V"
 
-        q = "(%s)" % ";".join(map(encode_item, forms, types))
-        f, d = common_denominator(self)
-        if d != 1:
-            f, t = list_form(f)
-            if t == "V":
-                f = "(%s)" % f
-            cdq = f + "%" + encode_item(*number_form(d))
-            if len(cdq) < len(q):
-                return cdq, "V"
+        q, t = "(%s)" % ";".join(map(encode_item, forms, types)), "v"
 
-        return q, "v"
+        n, d = common_denominator(self)
+        if d > 1:
+            cdq = "%".join((encode_item(*list_form(n), left=True),
+                            encode_item(*number_form(d))))
+            if len(cdq) < len(q):
+                q, t = cdq, "V"
+
+        return q, t
 
     def value_form(self):
         if rational(self) or isinstance(self, (Decimal, NoneType)):
