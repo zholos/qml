@@ -7,8 +7,10 @@ import decimal
 from decimal import Decimal
 from types import NoneType
 import sympy as sp
+import sympy.mpmath as mp
 
 decimal.getcontext().prec = 50
+mp.mp.dps = 50
 
 __all__ = ["qform", "qstr", "output", "prec", "reps", "test"]
 
@@ -68,6 +70,8 @@ def qform(self):
             return number_form(p / Decimal(q))
 
         if isinstance(n, Decimal):
+            if abs(n) < 10 ** Decimal(-20):
+                return "0", "f"
             q = abs(n).log10().quantize(1, rounding=decimal.ROUND_FLOOR)
             q = n.quantize(10 ** (q - 20)).as_tuple()
             l = len(q.digits) + q.exponent
@@ -76,6 +80,9 @@ def qform(self):
                 "." + "0" * max(0, -l) + \
                 ''.join(map(str, q.digits[max(0, l):]))
             return q.rstrip("0").rstrip("."), "f"
+
+        if isinstance(n, mp.mpf):
+            return number_form(Decimal(mp.nstr(n, mp.mp.dps)))
 
         if n is None:
             return "0n", "f"
@@ -142,10 +149,12 @@ def qform(self):
         return q, t
 
     def value_form(self):
-        if rational(self) or isinstance(self, (Decimal, NoneType)):
+        if rational(self) or isinstance(self, (Decimal, mp.mpf, NoneType)):
             return number_form(self)
         if isinstance(self, (list, tuple)):
             return list_form(self)
+        if isinstance(self, (sp.MatrixBase, mp.matrix)):
+            return value_form(self.tolist())
         if hasattr(self, 'qform'):
             return self.qform(), "S"
         raise Exception()

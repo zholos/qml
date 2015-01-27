@@ -5,6 +5,7 @@ import os.path, io
 import qform
 import libm
 import matrix
+import mpmat
 import conmax
 
 if __name__ == '__main__':
@@ -17,6 +18,8 @@ if __name__ == '__main__':
                     libm.tests()
                 elif line == "---MATRIX---":
                     matrix.tests()
+                elif line == "---MPMAT---":
+                    mpmat.tests()
                 elif line == "---CONMAX---":
                     conmax.tests()
                 else:
