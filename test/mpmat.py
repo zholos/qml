@@ -46,6 +46,24 @@ large_subjects = [
     "{y#tan x*1+til prd y}[sqrt 3] 100 20"
 ]
 
+def test_mlup():
+    output("""\
+    mlup_b:{
+        $[3<>count lup:.qml.mlup x;::;
+          not (.qml.mdim[l:lup 0]~mins d) and (.qml.mdim[u:lup 1]~(min d;d 1))
+            and asc[p:lup 2]~til first d:.qml.mdim x;::;
+          not mzero[(i+1)_'l] and mzero[til[min d]#'u]
+            and all[prec>=abs 1-l@'i:til d 0] and mzero x[p]-.qml.mm[l] u;::;
+          1]};""")
+
+    for A in subjects:
+        test("mlup_b", A, qstr("1b"))
+
+    reps(250)
+    for Aq in large_subjects:
+        test("mlup_b", qstr(Aq), qstr("1b"))
+    reps(10000)
+
 def test_msvd():
     output("""\
     msvd_:{[b;x]
@@ -74,6 +92,7 @@ def test_msvd():
 
 
 def tests():
+    test_mlup()
     test_msvd()
 
 
