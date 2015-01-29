@@ -8,6 +8,7 @@ from decimal import Decimal
 from types import NoneType
 import sympy as sp
 import sympy.mpmath as mp
+from sympy import S
 
 decimal.getcontext().prec = 50
 mp.mp.dps = 50
@@ -15,7 +16,7 @@ mp.mp.dps = 50
 __all__ = ["qform", "qstr", "output", "prec", "reps", "test"]
 
 
-def qform(self):
+def qform(self, no_pow=False, no_trigh=False):
     # form types:
     #        "i", "j", "f" - partial scalar atoms
     #   "S", "s" - scalar expression
@@ -89,6 +90,85 @@ def qform(self):
 
         raise Exception()
 
+    def expr_form(e, left=False):
+        def op(name, a, b):
+            return "%s%s%s" % (
+                encode_item(*expr_form(a, left=True), left=True), name,
+                encode_item(*expr_form(b))), "S"
+        def func(name, x):
+            if left:
+                return "%s[%s]" % (name, encode_item(*expr_form(x))), "s"
+            else:
+                return "%s %s" % (name, encode_item(*expr_form(x))), "S"
+
+        a, b = e.as_coeff_mul()
+        if not b:
+            return number_form(a)
+        if abs(a.p) != 1 and abs(sp.Mul(*b).as_numer_denom()[0]) != 1:
+            return op("*", a, sp.Mul(*b))
+        if a == -1 and b:
+            return func("neg", sp.Mul(*b))
+        a, b = e.as_coeff_add()
+        if a != 0 and b:
+            if b[0].as_coeff_mul()[0] < 0:
+                return op("-", a, -sp.Add(*b))
+            else:
+                return op("+", a, sp.Add(*b))
+        a, b = e.as_numer_denom()
+        if b != 1:
+            for r in a.as_coeff_mul()[1]:
+                r, p = r.as_base_exp()
+                if p == sp.Rational(1, 2):
+                    r = r.as_coeff_mul()[0]
+                    if r.q == 1 and b.as_coeff_mul()[0] % r.p == 0:
+                        a, b = a / sp.sqrt(r.p), b / sp.sqrt(r.p)
+            if b.as_coeff_mul()[0] != 1:
+                if a.as_coeff_mul()[0] == -1 or all(
+                        x.as_coeff_mul()[0]<0 for x in a.as_coeff_add()[1]):
+                    a, b = -a, -b
+            return op("%", a, b)
+        if e.func == sp.Add:
+            a, b = e.as_two_terms()
+            if b.as_coeff_mul()[0] < 0:
+                return op("-", a, -b)
+            else:
+                return op("+", a, b)
+        if e.func == sp.Mul:
+            a, b = e.as_two_terms()
+            return op("*", a, b)
+        b, p = e.as_base_exp()
+        if p != 1:
+            if p.is_Rational:
+                if not no_pow and p not in (S(1)/2, S(1)/3, 2, 3):
+                    if b == sp.E:
+                        return func(".qml.exp", p)
+                    else:
+                        return ".qml.pow[%s;%s]" % (
+                            encode_item(*expr_form(b)),
+                            encode_item(*expr_form(p))), "s"
+                for x, name in ((3, "cbrt"), (2, "sqrt")):
+                    if p.q % x == 0:
+                        return func(".qml.%s" % name, e**x)
+                if p.q != 1:
+                    raise Exception
+                assert 1 <= p.p <= 5
+                f, t = expr_form(b)
+                if t == "S":
+                    s = "{"+"*".join(["x"]*p.p)+"} "+encode_item(f, t)
+                else:
+                    s = "*".join([encode_item(f, t, left=True)]*p.p)
+                return s, "S"
+            raise Exception
+        if e == sp.E:
+            return "e", "s"
+        if e == sp.pi:
+            return "pi", "s"
+        if e == S.NaN:
+            return "0n", "f"
+        if not no_trigh and e.func in (sp.sinh, sp.cosh, sp.tanh):
+            return func(".qml.%s" % e.func, *e.args)
+        raise Exception
+
     def common_denominator(f):
         def lcm(a, b):
             return a * b // fractions.gcd(a, b)
@@ -151,6 +231,8 @@ def qform(self):
     def value_form(self):
         if rational(self) or isinstance(self, (Decimal, mp.mpf, NoneType)):
             return number_form(self)
+        if isinstance(self, (sp.Basic)):
+            return expr_form(self)
         if isinstance(self, (list, tuple)):
             return list_form(self)
         if isinstance(self, (sp.MatrixBase, mp.matrix)):
@@ -182,7 +264,12 @@ def reps(reps):
     output("    reps:%d;" % reps)
 
 def test(name, *args, **kwargs):
-    args, result = map(qform, args[:-1]), qform(args[-1])
+    comment = kwargs.pop("comment", "")
+    if comment:
+        comment = " / %s" % comment
+
+    args = [qform(x, **kwargs) for x in args]
+    result = args.pop(-1)
 
     if "[" in name:
         call = ";%s]" % ";".join(args)
@@ -190,10 +277,6 @@ def test(name, *args, **kwargs):
         call = " %s" % args[0]
     else:
         call = "[%s]" % ";".join(args)
-
-    comment = kwargs.get("comment", "")
-    if comment:
-        comment = " / %s" % comment
 
     if "_" not in name:
         name = ".qml.%s" % name
