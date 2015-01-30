@@ -1,7 +1,6 @@
 from __future__ import division
 
 import sys
-import fractions
 from fractions import Fraction
 import decimal
 from decimal import Decimal
@@ -170,9 +169,6 @@ def qform(self, no_pow=False, no_trigh=False):
         raise Exception
 
     def common_denominator(f):
-        def lcm(a, b):
-            return a * b // fractions.gcd(a, b)
-
         def mul(a, b):
             if isinstance(a, (list, tuple)):
                 return [mul(x, b) for x in a]
@@ -180,13 +176,18 @@ def qform(self, no_pow=False, no_trigh=False):
                 return a * b
 
         if isinstance(f, (list, tuple)):
-            ns, ds = zip(*map(common_denominator, f))
-            if None not in ds:
-                cd = reduce(lcm, ds, 1)
-                return [mul(n, cd // d) for n, d in zip(ns, ds)], cd
+            ns, ds, rs = zip(*map(common_denominator, f))
+            if None not in ds and len(set(rs)) == 1:
+                cd = sp.lcm(map(S, ds))
+                return [mul(n, cd // d) for n, d in zip(ns, ds)], cd, rs[0]
         if rational(f):
-            return rational(f)
-        return None, None
+            return rational(f) + (1,)
+        if isinstance(f, sp.Basic):
+            a, b = f.as_coeff_mul()
+            if a.is_Rational and len(b) == 1 and b[0].is_Pow and \
+                    b[0].base.is_Rational and b[0].exp == S(1)/2:
+                return a.p, a.q, b[0].base
+        return None, None, None
 
     def list_form(self, no_flip=False):
         if len(self) == 0:
@@ -213,10 +214,11 @@ def qform(self, no_pow=False, no_trigh=False):
 
         q, t = "(%s)" % ";".join(map(encode_item, forms, types)), "v"
 
-        n, d = common_denominator(self)
-        if d > 1:
-            cdq = "%".join((encode_item(*list_form(n), left=True),
-                            encode_item(*number_form(d))))
+        n, d, r = common_denominator(self)
+        if d > 1 or r > 1:
+            e, op = max(((d/sp.sqrt(r), "%"), (sp.sqrt(r)/d, "*")))
+            cdq = op.join((encode_item(*list_form(n), left=True),
+                           encode_item(*expr_form(e))))
             if len(cdq) < len(q):
                 q, t = cdq, "V"
 

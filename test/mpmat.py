@@ -46,6 +46,71 @@ large_subjects = [
     "{y#tan x*1+til prd y}[sqrt 3] 100 20"
 ]
 
+def N(A):
+    for r in A.atoms(sp.Pow):
+        if r.exp == S(1)/2 and r.base.is_Rational and r.base > 1000000000:
+            return mp.matrix(A.evalf(mp.mp.dps))
+    return A
+
+def qrp(A):
+    Q = sp.zeros(A.rows, 0)
+    P = []
+    J = list(range(A.cols))
+    while J:
+        U = A - Q*Q.T*A
+        j = max(J, key=lambda j: (U.col(j).norm(), -j))
+        J.remove(j)
+        P.append(j)
+        a = U.col(j)
+        if a.norm():
+            Q = Q.row_join(a.normalized())
+    R = Q.T * A.extract(range(A.rows), P)
+    assert Q.T*Q == sp.eye(Q.cols) and R.is_upper
+    assert A.extract(range(A.rows), P) == Q * R
+    return Q, R, P
+
+def test_mqr(pivot=False):
+    if not pivot:
+        output("""\
+    mzero:{all all each prec>=abs x};
+    mortho:{
+        mzero[.qml.diag[count[m]#1.]-m:.qml.mm[x] flip x] and
+        mzero .qml.diag[count[n]#1.]-n:.qml.mm[flip x] x};
+    mqr_:{[k;x]
+        $[2<>count qr:.qml.mqr x;::;
+          not (.qml.mdim[q:qr 0]~2#d 0) and .qml.mdim[r:qr 1]~d:.qml.mdim x;::;
+          not mortho[q] and mzero (d[1]&til d 0)#'r;::;
+          not mzero x-.qml.mm[q] r;::;
+          null k;1b;(s*/:k#/:q;(s:1-2*0>.qml.mdiag k#r)*k#k#/:r)]};""")
+    else:
+        output("""\
+    mqrp_:{[k;x]
+        $[3<>count qrp:.qml.mqrp x;::;
+          not (.qml.mdim[q:qrp 0]~2#d 0) and (.qml.mdim[r:qrp 1]~d)
+            and asc[p:qrp 2]~til last d:.qml.mdim x;::;
+          not mortho[q] and mzero (d[1]&til d 0)#'r;::;
+          not mzero (x@\:p)-.qml.mm[q] r;::;
+          null k;1b;(s*/:k#/:q;(s:1-2*0>.qml.mdiag k#r)*k#k#/:r;k#p)]};""")
+
+    for A in subjects:
+        rank = A.rank()
+        if not pivot:
+            if A.rows == A.cols == rank:
+                Q, R = A.QRdecomposition()
+                test("mqr_[%s" % rank, A, (N(Q), N(R)))
+            else:
+                test("mqr_[0N", A, qstr("1b"))
+        else:
+            Q, R, P = qrp(A)
+            R = R.extract(range(R.rows), range(rank))
+            P = P[:rank]
+            test("mqrp_[%s" % rank, A, (N(Q), N(R), P))
+
+    reps(250)
+    for Aq in large_subjects:
+        test("%s[0N" % ("mqr_" if not pivot else "mqrp_"), qstr(Aq), qstr("1b"))
+    reps(10000)
+
 def test_mlup():
     output("""\
     mlup_b:{
@@ -92,6 +157,8 @@ def test_msvd():
 
 
 def tests():
+    test_mqr(False)
+    test_mqr(True)
     test_mlup()
     test_msvd()
 
