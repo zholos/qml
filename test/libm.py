@@ -92,10 +92,47 @@ def test_trigh():
     aemit("acosh", sp.cosh, True)
     aemit("atanh", sp.tanh, False)
 
+def test_extra():
+    m1arg = FiniteSet(*(x / max(exparg) for x in exparg))
+    for x in sorted(m1arg):
+        test("expm1", x, sp.exp(x)-1)
+
+    def emit_log(name, base, floor=False):
+        for x in sorted(exparg):
+            test(name, base**x, sp.floor(x) if floor else x)
+
+    emit_log("log", sp.E)
+    emit_log("log10", 10)
+    emit_log("logb", 2, True)
+
+    for x in sorted(m1arg):
+        test("log1p", qstr(".qml.expm1 %s" % qform(x)), x)
+
+    for x in sorted(posarg):
+        y = sum(tuple(sorted(posarg))[-2:]) - x
+        test("hypot", x, y, sp.sqrt(x**2 + y**2))
+
+    roundarg = FiniteSet(*sum(((x-42, x+42) for x in posarg if x < 1), ()))
+    def emit_round(name, func):
+        for x in sorted(roundarg):
+            test(name, x, func(x))
+
+    emit_round("floor", sp.floor)
+    emit_round("ceil", sp.ceiling)
+
+    for x in sorted(exparg):
+        test("fabs", x, abs(x))
+
+    for x in sorted(exparg):
+        y = S(1)/3
+        test("fmod", x, y, x % y - y if x < 0 and x % y else x % y)
+
+
 def tests():
     test_pow()
     test_trig()
     test_trigh()
+    test_extra()
 
 
 if __name__ == "__main__":

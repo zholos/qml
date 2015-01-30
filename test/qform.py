@@ -118,10 +118,10 @@ def qform(self, no_pow=False, no_trigh=False):
         if b != 1:
             for r in a.as_coeff_mul()[1]:
                 r, p = r.as_base_exp()
-                if p == sp.Rational(1, 2):
+                if p.is_Rational and p.p == 1 and p.q > 1:
                     r = r.as_coeff_mul()[0]
                     if r.q == 1 and b.as_coeff_mul()[0] % r.p == 0:
-                        a, b = a / sp.sqrt(r.p), b / sp.sqrt(r.p)
+                        a, b = a / r.p**p, b / r.p**p
             if b.as_coeff_mul()[0] != 1:
                 if a.as_coeff_mul()[0] == -1 or all(
                         x.as_coeff_mul()[0]<0 for x in a.as_coeff_add()[1]):
