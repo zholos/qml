@@ -46,11 +46,30 @@ large_subjects = [
     "{y#tan x*1+til prd y}[sqrt 3] 100 20"
 ]
 
+cholesky_subjects = [
+    Matrix([[42]]),
+    Matrix([[1, 2], [2, 5]]),
+    Matrix([[1, 1, 3], [1, 5, 13], [3, 13, 98]]),
+    Matrix([[3, -2, 3], [-2, 7, -1], [3, -1, 5]]),
+    hilbert_matrix(5, 5),
+    Matrix([[1, 2], [2, -5]]),
+    Matrix([[1, -2], [-2, 4]]),
+    Matrix([[1, 2], [-3, 4]])
+]
+
 def N(A):
     for r in A.atoms(sp.Pow):
         if r.exp == S(1)/2 and r.base.is_Rational and r.base > 1000000000:
             return mp.matrix(A.evalf(mp.mp.dps))
     return A
+
+def test_mchol():
+    for A in cholesky_subjects:
+        if A.is_hermitian and all(x > 0 for x in A.berkowitz_minors()):
+            R = A.cholesky().T
+        else:
+            R = A * sp.nan
+        test("mchol", A, R)
 
 def qrp(A):
     Q = sp.zeros(A.rows, 0)
@@ -157,6 +176,7 @@ def test_msvd():
 
 
 def tests():
+    test_mchol()
     test_mqr(False)
     test_mqr(True)
     test_mlup()
