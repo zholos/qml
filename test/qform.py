@@ -15,7 +15,7 @@ mp.mp.dps = 50
 __all__ = ["qform", "qstr", "output", "prec", "reps", "test"]
 
 
-def qform(self, no_pow=False, no_trigh=False):
+def qform(self, no_pow=False, no_trigh=False, complex_pair=False):
     # form types:
     #        "i", "j", "f" - partial scalar atoms
     #   "S", "s" - scalar expression
@@ -81,8 +81,11 @@ def qform(self, no_pow=False, no_trigh=False):
                 ''.join(map(str, q.digits[max(0, l):]))
             return q.rstrip("0").rstrip("."), "f"
 
-        if isinstance(n, mp.mpf):
-            return number_form(Decimal(mp.nstr(n, mp.mp.dps)))
+        if isinstance(n, (mp.mpf, mp.mpc)) and not n.imag:
+            return number_form(Decimal(mp.nstr(n.real, mp.mp.dps)))
+
+        if complex_pair and isinstance(n, mp.mpc):
+            return list_form([n.real, n.imag])
 
         if n is None:
             return "0n", "f"
@@ -100,6 +103,11 @@ def qform(self, no_pow=False, no_trigh=False):
             else:
                 return "%s %s" % (name, encode_item(*expr_form(x))), "S"
 
+        if complex_pair:
+            a, b = e.as_real_imag()
+            if b:
+                return "(%s;%s)" % (encode_item(*expr_form(a)),
+                                    encode_item(*expr_form(b))), "s"
         a, b = e.as_coeff_mul()
         if not b:
             return number_form(a)
@@ -231,7 +239,8 @@ def qform(self, no_pow=False, no_trigh=False):
         return q, t
 
     def value_form(self):
-        if rational(self) or isinstance(self, (Decimal, mp.mpf, NoneType)):
+        if rational(self) or \
+                isinstance(self, (Decimal, mp.mpf, mp.mpc, NoneType)):
             return number_form(self)
         if isinstance(self, (sp.Basic)):
             return expr_form(self)

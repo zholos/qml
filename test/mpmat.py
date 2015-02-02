@@ -46,6 +46,22 @@ large_subjects = [
     "{y#tan x*1+til prd y}[sqrt 3] 100 20"
 ]
 
+eigenvalue_subjects = [
+    Matrix([[42]]),
+    Matrix([[1, 2], [-3, 4]]),
+    Matrix([[1, 2], [3, 4]]),
+    Matrix([[5, 6], [0, 5]]),
+    Matrix([[5, 0], [0, 5]]),
+    Matrix([[1, 3], [2, 6]]),
+    Matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
+    Matrix([[1, 2, 3], [0, 5, 6], [7, 8, 9]]),
+    Matrix([[1, 2, 3], [0, 5, -6], [-7, 8, -9]]),
+    Matrix([[3, 0, 2], [0, 5, 0], [1, 0, 4]]),
+    Matrix([[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 1, 2], [0, 0, 3, 4]]),
+    hilbert_matrix(5, 5),
+    random_matrix(7, 7)
+]
+
 cholesky_subjects = [
     Matrix([[42]]),
     Matrix([[1, 2], [2, 5]]),
@@ -62,6 +78,56 @@ def N(A):
         if r.exp == S(1)/2 and r.base.is_Rational and r.base > 1000000000:
             return mp.matrix(A.evalf(mp.mp.dps))
     return A
+
+def test_mev():
+    output("""\
+    reim:{$[0>type x;1 0*x;2=count x;x;'`]};
+    mc:{((x[0]*y 0)-x[1]*y 1;(x[0]*y 1)+x[1]*y 0)};
+    mmc:{((.qml.mm[x 0]y 0)-.qml.mm[x 1]y 1;(.qml.mm[x 0]y 1)+.qml.mm[x 1]y 0)};
+    mev_:{[b;x]
+        if[2<>count wv:.qml.mev x;'`length];
+        if[not all over prec>=abs
+            (flip[(flip')(reim'')x]mmc/:vc)-
+            (w:reim'[wv 0])mc'vc:(flip')(reim'')(v:wv 1);'`check];
+        / Normalize sign; LAPACK already normalized to real
+        v*:1-2*0>{x a?max a:abs x}each vc[;0];
+        (?'[prec>=abs w[;1];w[;0];w];?'[b;v;0n])};""")
+
+    for A in eigenvalue_subjects:
+        if A.rows <= 3:
+            V = []
+            for w, n, r in A.eigenvects():
+                w = sp.simplify(sp.expand_complex(w))
+                if len(r) == 1:
+                    r = r[0]
+                    r = sp.simplify(sp.expand_complex(r))
+                    r = r.normalized() / sp.sign(max(r, key=abs))
+                    r = sp.simplify(sp.expand_complex(r))
+                else:
+                    r = None
+                V.extend([(w, r)]*n)
+            V.sort(key=lambda (x, _): (-abs(x), -sp.im(x)))
+        else:
+            Am = mp.matrix(A)
+            # extra precision for complex pairs to be equal in sort
+            with mp.extradps(mp.mp.dps):
+                W, R = mp.eig(Am)
+            V = []
+            for w, r in zip(W, (R.column(i) for i in range(R.cols))):
+                w = mp.chop(w)
+                with mp.extradps(mp.mp.dps):
+                    _, S, _ = mp.svd(Am - w*mp.eye(A.rows))
+                if sum(x == 0 for x in mp.chop(S)) == 1:
+                    # nullity 1, so normalized eigenvector is unique
+                    r /= mp.norm(r) * mp.sign(max(r, key=abs))
+                    r = mp.chop(r)
+                else:
+                    r = None
+                V.append((w, r))
+            V.sort(key=lambda (x, _): (-abs(x), -x.imag))
+        W, R = zip(*V)
+        test("mev_[%sb" % "".join("0" if r is None else "1" for r in R), A,
+             (W, [r if r is None else list(r) for r in R]), complex_pair=True)
 
 def test_mchol():
     for A in cholesky_subjects:
@@ -176,6 +242,8 @@ def test_msvd():
 
 
 def tests():
+    prec("1e-9")
+    test_mev()
     test_mchol()
     test_mqr(False)
     test_mqr(True)
