@@ -3,7 +3,7 @@ from __future__ import division
 
 import sympy as sp
 import sympy.mpmath as mp
-from sympy import Matrix, S
+from sympy import Matrix, S, I
 
 from qform import *
 
@@ -241,6 +241,42 @@ def test_msvd():
     reps(10000)
 
 
+poly_subjects = [
+    [1],
+    [S(1)/2, 21],
+    [1, 3, 2],
+    [1, 2, 3],
+    [5, 0, 0, 0, 0, 1],
+    [10, 0, 0, 0, 75, 420],
+    (lambda n: [sp.binomial(n, i) for i in range(n+1)])(2),
+    list(random_matrix(25, 1)),
+    [1, -1, 1+I],
+    [sp.sqrt(-2), sp.sqrt(2)-sp.sqrt(-2),2+I,-3*I],
+    list(random_matrix(25, 2)*Matrix([1, I]))
+]
+
+def test_poly():
+    output("""\
+    poly_:{
+        r:{$[prec>=abs(x:reim x)1;x 0;x]} each .qml.poly x;
+        r iasc {x:reim x;(abs x 1;neg x 1;x 0)} each r};""")
+
+    for A in poly_subjects:
+        A = sp.Poly(A, sp.Symbol("x"))
+        if A.degree() <= 3 and all(a.is_real for a in A.all_coeffs()):
+            R = []
+            for r in sp.roots(A, multiple=True):
+                r = sp.simplify(sp.expand_complex(r))
+                R.append(r)
+            R.sort(key=lambda x: (abs(sp.im(x)), -sp.im(x), sp.re(x)))
+        else:
+            R = mp.polyroots([mp.mpc(*(a.evalf(mp.mp.dps)).as_real_imag())
+                              for a in A.all_coeffs()])
+            R.sort(key=lambda x: (abs(x.imag), -x.imag, x.real))
+        assert len(R) == A.degree()
+        test("poly_", A.all_coeffs(), R, complex_pair=True)
+
+
 def tests():
     prec("1e-9")
     test_mev()
@@ -249,6 +285,8 @@ def tests():
     test_mqr(True)
     test_mlup()
     test_msvd()
+    prec("1e-8")
+    test_poly()
 
 
 if __name__ == "__main__":
