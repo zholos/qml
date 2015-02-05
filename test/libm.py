@@ -2,7 +2,10 @@
 from __future__ import division
 
 import sympy as sp
-from sympy import S, pi, FiniteSet, Interval
+import sympy.stats as st
+import sympy.mpmath as mp
+from sympy import S, pi, oo, FiniteSet, ProductSet, Interval
+mpf = mp.mpf
 
 from qform import *
 
@@ -128,11 +131,65 @@ def test_extra():
         test("fmod", x, y, x % y - y if x < 0 and x % y else x % y)
 
 
+def N(x):
+    return mpf(x.evalf(mp.mp.dps))
+
+def test_hyper():
+    for x in sorted(exparg):
+        test("erf", x, N(sp.erf(x)))
+    for x in sorted(exparg):
+        test("erfc", x, N(sp.erfc(x)))
+
+    gamarg = FiniteSet(*(x+S(1)/12 for x in exparg))
+    betarg = ProductSet(gamarg, gamarg)
+    for x in sorted(gamarg):
+        test("lgamma", x, N(sp.log(abs(sp.gamma(x)))))
+    for x in sorted(gamarg):
+        test("gamma", x, N(sp.gamma(x)))
+    for x, y in sorted(betarg, key=lambda (x, y): (y, x)):
+        test("beta", x, y, N(sp.beta(x, y)))
+
+    pgamarg = FiniteSet(S(1)/12, S(1)/3, S(3)/2, 5)
+    pgamargp = ProductSet(gamarg & Interval(0, oo, True), pgamarg)
+    for a, x in sorted(pgamargp):
+        test("pgamma", a, x, N(sp.lowergamma(a, x)))
+    for a, x in sorted(pgamargp):
+        test("pgammac", a, x, N(sp.uppergamma(a, x)))
+    for a, x in sorted(pgamargp):
+        test("pgammar", a, x, N(sp.lowergamma(a, x)/sp.gamma(a)))
+    for a, x in sorted(pgamargp):
+        test("pgammarc", a, x, N(sp.uppergamma(a, x)/sp.gamma(a)))
+    for a, x in sorted(pgamargp):
+        test("ipgammarc", a, N(sp.uppergamma(a, x)/sp.gamma(a)), x)
+
+    pbetargp = [(a, b, x) for a, b, x in ProductSet(betarg, pgamarg)
+                if a > 0 and b > 0 and x < 1]
+    pbetargp.sort(key=lambda (a, b, x): (b, a, x))
+    for a, b, x in pbetargp:
+        test("pbeta", a, b, x, mp.betainc(mpf(a), mpf(b), x2=mpf(x)))
+    for a, b, x in pbetargp:
+        test("pbetar", a, b, x, mp.betainc(mpf(a), mpf(b), x2=mpf(x),
+                                           regularized=True))
+    for a, b, x in pbetargp:
+        test("ipbetar", a, b, mp.betainc(mpf(a), mpf(b), x2=mpf(x),
+                                         regularized=True), x)
+
+    for x in sorted(posarg):
+        test("j0", x, N(sp.besselj(0, x)))
+    for x in sorted(posarg):
+        test("j1", x, N(sp.besselj(1, x)))
+    for x in sorted(posarg-FiniteSet(0)):
+        test("y0", x, N(sp.bessely(0, x)))
+    for x in sorted(posarg-FiniteSet(0)):
+        test("y1", x, N(sp.bessely(1, x)))
+
+
 def tests():
     test_pow()
     test_trig()
     test_trigh()
     test_extra()
+    test_hyper()
 
 
 if __name__ == "__main__":
