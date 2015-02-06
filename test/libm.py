@@ -132,7 +132,10 @@ def test_extra():
 
 
 def N(x):
-    return mpf(x.evalf(mp.mp.dps))
+    if x.is_Rational and abs(x.p * x.q) < 2**63-1:
+        return x
+    else:
+        return mpf(x.evalf(mp.mp.dps))
 
 def test_hyper():
     for x in sorted(exparg):
@@ -184,12 +187,99 @@ def test_hyper():
         test("y1", x, N(sp.bessely(1, x)))
 
 
+def test_prob():
+    def emit(name, iname, cdf, args, no_small=False):
+        V = []
+        for arg in sorted(args):
+            y = cdf(*arg)
+            if isinstance(y, mpf):
+                e = sp.nsimplify(y, rational=True)
+                if e.is_Rational and e.q <= 1000 and mp.almosteq(e, y, 1e-25):
+                    y = e
+            else:
+                y = N(y)
+            V.append(arg + (y,))
+        for v in V:
+            if name:
+                test(name, *v)
+        for v in V:
+            if iname and (not no_small or 1/1000 <= v[-1] <= 999/1000):
+                test(iname, *(v[:-2] + v[:-3:-1]))
+
+    x = sp.Symbol("x")
+    emit("ncdf", "nicdf",
+         sp.Lambda(x, st.cdf(st.Normal("X", 0, 1))(x)), zip(exparg))
+    # using cdf() for anything more complex is too slow
+
+    df = FiniteSet(1, S(3)/2, 2, S(5)/2, 5, 25)
+    emit("c2cdf", "c2icdf",
+         lambda k, x: sp.lowergamma(k/2, x/2)/sp.gamma(k/2),
+         ProductSet(df, posarg), no_small=True)
+
+    dfint = df & sp.fancysets.Naturals()
+    def cdf(k, x):
+        k, x = map(mpf, (k, x))
+        return .5 + .5*mp.sign(x)*mp.betainc(k/2, .5, x1=1/(1+x**2/k),
+                                             regularized=True)
+    emit("stcdf", "sticdf", cdf, ProductSet(dfint, exparg))
+
+    def cdf(d1, d2, x):
+        d1, d2, x = map(mpf, (d1, d2, x))
+        return mp.betainc(d1/2, d2/2, x2=x/(x+d2/d1), regularized=True)
+
+    emit("fcdf", "ficdf", cdf, ProductSet(dfint, dfint, posarg))
+
+    kth = ProductSet(sp.ImageSet(lambda x: x/5, df),
+                     posarg - FiniteSet(0))
+    emit("gcdf", "gicdf",
+         lambda k, th, x: sp.lowergamma(k, x/th)/sp.gamma(k),
+         ProductSet(kth, posarg), no_small=True)
+
+    karg = FiniteSet(0, 1, 2, 5, 10, 15, 40)
+    knparg = [(k, n, p) for k, n, p
+              in ProductSet(karg, karg, posarg & Interval(0, 1, True, True))
+              if k <= n and n > 0]
+    def cdf(k, n, p):
+        return st.P(st.Binomial("X", n, p) <= k)
+    emit("bncdf", "bnicdf", cdf, knparg, no_small=True)
+
+    def cdf(k, lamda):
+        return sp.uppergamma(k+1, lamda)/sp.gamma(k+1)
+    emit("pscdf", "psicdf", cdf,
+         ProductSet(karg, posarg + karg - FiniteSet(0)), no_small=True)
+
+    x, i = sp.symbols("x i")
+    def smcdf(n, e):
+        return 1-sp.Sum(sp.binomial(n, i)*e*(e+i/n)**(i-1)*(1-e-i/n)**(n-i),
+                        (i, 0, sp.floor(n*(1-e)))).doit()
+    kcdf = sp.Lambda(x,
+        sp.sqrt(2*pi)/x*sp.Sum(sp.exp(-pi**2/8*(2*i-1)**2/x**2), (i, 1, oo)))
+    smarg = ProductSet(karg - FiniteSet(0), posarg & Interval(0, 1, True, True))
+    karg = FiniteSet(S(1)/100, S(1)/10) + (posarg & Interval(S(1)/4, oo, True))
+
+    for n, e in sorted(smarg):
+        test("smcdf", n, e, N(smcdf(n, e)))
+    prec("1e-10")
+    for x in sorted(karg):
+        test("kcdf", x, N(kcdf(x)))
+    for n, e in sorted(smarg):
+        p = smcdf(n, e)
+        if p < S(9)/10:
+            test("smicdf", n, N(p), e)
+    prec("1e-7")
+    for x in sorted(karg):
+        p = kcdf(x)
+        if N(p) > S(10)**-8:
+            test("kicdf", N(p), x)
+
+
 def tests():
     test_pow()
     test_trig()
     test_trigh()
     test_extra()
     test_hyper()
+    test_prob()
 
 
 if __name__ == "__main__":
