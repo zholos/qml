@@ -361,20 +361,13 @@ def test_conmin():
          more = True)
 
 
-def test_prec(prec):
-    output("    prec:%s;" % prec)
-
-def test_reps(reps):
-    output("    reps:%d;" % reps)
-
-
 def tests():
-    test_reps(25)
-    test_prec("1e-6")
+    reps(25)
+    prec("1e-6")
     test_root()
-    test_prec("1e-7")
+    prec("1e-7")
     test_line()
-    test_prec("1e-4")
+    prec("1e-4")
     test_solve()
     test_min()
     test_conmin()

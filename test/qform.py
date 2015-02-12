@@ -9,7 +9,7 @@ from types import NoneType
 
 decimal.getcontext().prec = 50
 
-__all__ = ["qform", "output"]
+__all__ = ["qform", "output", "prec", "reps", "test"]
 
 
 def qform(self, preserve = False):
@@ -148,3 +148,25 @@ output_file = None
 
 def output(s):
     (output_file or sys.stdout).write((s + "\n").decode("ascii"))
+
+def prec(prec):
+    output("    prec:%s;" % prec)
+
+def reps(reps):
+    output("    reps:%d;" % reps)
+
+def test(name, *args, **kwargs):
+    args, result = map(qform, args[:-1]), qform(args[-1])
+
+    if "[" in name:
+        call = ";%s]" % ";".join(args)
+    elif len(args) == 1:
+        call = " %s" % args[0]
+    else:
+        call = "[%s]" % ";".join(args)
+
+    comment = kwargs.get("comment", "")
+    if comment:
+        comment = " / %s" % comment
+
+    output('    test[".qml.%s%s";"%s"];%s' % (name, call, result, comment))
