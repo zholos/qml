@@ -1,13 +1,16 @@
 from __future__ import division
 
+import sys
 import fractions
 from fractions import Fraction
 import decimal
 from decimal import Decimal
 from types import NoneType
 
-
 decimal.getcontext().prec = 50
+
+__all__ = ["qform", "output"]
+
 
 def qform(self, preserve = False):
     if hasattr(self, 'qform'):
@@ -139,3 +142,9 @@ def qform(self, preserve = False):
         raise Exception()
 
     return encode_item(*value_form(self))
+
+
+output_file = None
+
+def output(s):
+    (output_file or sys.stdout).write((s + "\n").decode("ascii"))

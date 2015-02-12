@@ -4,7 +4,7 @@ from __future__ import division
 from fractions import Fraction
 from decimal import Decimal
 
-from qform import qform
+from qform import *
 
 
 def qforms(x):
@@ -381,6 +381,4 @@ def tests():
 
 
 if __name__ == "__main__":
-    def output(s):
-        print s
     tests()

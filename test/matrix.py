@@ -5,7 +5,7 @@ from fractions import Fraction
 import math
 import operator
 
-from qform import qform
+from qform import *
 
 
 class Matrix:
@@ -498,6 +498,4 @@ def tests():
 
 
 if __name__ == "__main__":
-    def output(s):
-        print s
     tests()
