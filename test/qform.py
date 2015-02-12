@@ -9,7 +9,7 @@ from types import NoneType
 
 decimal.getcontext().prec = 50
 
-__all__ = ["qform", "output", "prec", "reps", "test"]
+__all__ = ["qform", "qstr", "output", "prec", "reps", "test"]
 
 
 def qform(self, preserve = False):
@@ -142,6 +142,14 @@ def qform(self, preserve = False):
         raise Exception()
 
     return encode_item(*value_form(self))
+
+
+class qstr:
+    def __init__(self, qform):
+        self._qform = qform
+
+    def qform(self):
+        return self._qform
 
 
 output_file = None
