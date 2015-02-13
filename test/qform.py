@@ -14,9 +14,6 @@ __all__ = ["qform", "qstr", "output", "prec", "reps", "test"]
 
 
 def qform(self):
-    if hasattr(self, 'qform'):
-        return self.qform()
-
     # form types:
     #        "i", "j", "f" - partial scalar atoms
     #   "S", "s" - scalar expression
@@ -108,7 +105,7 @@ def qform(self):
         if len(self) == 0:
             return "()", "v"
 
-        if len(self) == 1 or all([e == self[0] for e in self]):
+        if len(self) == 1 or len(set(value_form(e) for e in self)) == 1:
             f, t = value_form(self[0])
             if t in ("v", "V"):
                 q = "enlist " + f
@@ -149,6 +146,8 @@ def qform(self):
             return number_form(self)
         if isinstance(self, (list, tuple)):
             return list_form(self)
+        if hasattr(self, 'qform'):
+            return self.qform(), "S"
         raise Exception()
 
     return encode_item(*value_form(self))
