@@ -101,7 +101,7 @@ def qform(self):
             return rational(f)
         return None, None
 
-    def list_form(self):
+    def list_form(self, no_flip=False):
         if len(self) == 0:
             return "()", "v"
 
@@ -132,6 +132,12 @@ def qform(self):
                             encode_item(*number_form(d))))
             if len(cdq) < len(q):
                 q, t = cdq, "V"
+
+        if not no_flip and all(isinstance(x, (list, tuple))
+                               for x in self) and len(set(map(len, self))) == 1:
+            fq = "flip "+encode_item(*list_form(list(zip(*self)), no_flip=True))
+            if len(fq) < len(q):
+                q, t = fq, "V"
 
         return q, t
 
