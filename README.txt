@@ -168,7 +168,7 @@ Constants and functions
   mlsqx[opt;A;B]  mlsq[] with options
                    `svd:  use SVD algorithm      (default: QR or LQ)
 
-  root[f;(x0;x1)]         find root on interval (f(x0)f(x1)<1)
+  root[f;(x0;x1)]         find root on interval (f(x0)f(x1)<0)
   rootx[opt;f;(x0;x1)]    root[] with options (as dictionary or mixed list)
                            `iter:  max iterations         (default: 100)
                            `tol:   numerical tolerance    (default: ~1e-8)
