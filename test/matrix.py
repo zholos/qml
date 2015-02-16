@@ -454,6 +454,7 @@ def test_mkron():
     test[".qml.mkron[(1 2;-3 4);-1 2]";"(-1 -2;2 4;3 -4;-6 8)"];
     test[".qml.mkron[(0 1 0;-2.5 0 3);(1 2;-3 4)]";"(0 0 1 2 0 0;0 0 -3 4 0 0;-2.5 -5 0 0 3 6;7.5 -10 0 0 -9 12)"];""")
 
+
 def tests():
     prec("1e-9")
     test_diag()
@@ -463,11 +464,10 @@ def tests():
     test_minv()
     test_mpinv()
     test_mm()
-    prec("1e-8")
+    prec("1e-7")
     test_ms()
     test_mls(False)
     test_mls(True)
-    prec("1e-7")
     test_mlsq(False)
     test_mlsq(True)
     test_mkron()

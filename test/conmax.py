@@ -363,13 +363,14 @@ def test_conmin():
 
 def tests():
     reps(25)
-    prec("1e-6")
+    prec("1e-5")
     test_root()
-    prec("1e-7")
+    prec("1e-6")
     test_line()
     prec("1e-4")
     test_solve()
     test_min()
+    prec("1e-3")
     test_conmin()
 
 

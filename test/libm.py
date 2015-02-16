@@ -262,11 +262,12 @@ def test_prob():
     prec("1e-10")
     for x in sorted(karg):
         test("kcdf", x, N(kcdf(x)))
+    prec("1e-9")
     for n, e in sorted(smarg):
         p = smcdf(n, e)
         if p < S(9)/10:
             test("smicdf", n, N(p), e)
-    prec("1e-7")
+    prec("1e-6")
     for x in sorted(karg):
         p = kcdf(x)
         if N(p) > S(10)**-8:
