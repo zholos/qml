@@ -368,7 +368,7 @@ makeselect "selecting Fortran floating-point options..." \
 makeselect "selecting Fortran thread safety options..." \
            "-frecursive is necessary for thread-safety." \
            FFLAGS_THREAD f_link \
-           -frecursive
+           -frecursive -fmax-stack-var-size=2000000000
 
 
 # nm required below
@@ -443,6 +443,11 @@ makeselect "selecting additional libraries for Fortran..." \
 makeselect "selecting how to link a specific library statically..." "" \
            LD_STATIC ld_static \
            -Wl,-Bstatic ""
+
+CONFTEST=stack_local
+makeyesno "checking if Fortran locals are placed on stack..." \
+          "would not be thread-safe." \
+          stack_local
 
 
 

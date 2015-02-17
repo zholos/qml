@@ -43,6 +43,12 @@ endef
 
 conftest.c/builtin = $(conftest.c/)
 
+define conftest.f/stack_local
+       subroutine f
+       double precision stkarr(100000)
+       call h(stkarr)
+       end
+endef
 
 export conftest_c = $(conftest.c/$(CONFTEST))
 export conftest_f = $(conftest.f/$(CONFTEST))
@@ -122,6 +128,9 @@ ifeq ($(WINDOWS),)
 else
 # nm doesn't work this way on Windows, so just assume the mapfile worked
 endif
+
+test/stack_local: test/f_compile
+	! $(call nm_grep,b,conftest.o) | grep -q 'stkarr'
 
 test/no_cygwin: test/shared_link
 	ldd conftest.$(DLLEXT) | \
