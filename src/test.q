@@ -3242,7 +3242,7 @@ pass:-1;while[2>pass+:1;
     test[".qml.mchol (1 2;2 -5)";"2#enlist 2#0n"];
     test[".qml.mchol (1 -2;-2 4)";"2#enlist 2#0n"];
     test[".qml.mchol (1 2;-3 4)";"2#enlist 2#0n"];
-    mzero:{all all each prec>=abs x};
+    mzero:{all all each prec>=0w^abs x};
     mortho:{
         mzero[.qml.diag[count[m]#1.]-m:.qml.mm[x] flip x] and
         mzero .qml.diag[count[n]#1.]-n:.qml.mm[flip x] x};

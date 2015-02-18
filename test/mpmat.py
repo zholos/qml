@@ -157,7 +157,7 @@ def qrp(A):
 def test_mqr(pivot=False):
     if not pivot:
         output("""\
-    mzero:{all all each prec>=abs x};
+    mzero:{all all each prec>=0w^abs x};
     mortho:{
         mzero[.qml.diag[count[m]#1.]-m:.qml.mm[x] flip x] and
         mzero .qml.diag[count[n]#1.]-n:.qml.mm[flip x] x};
