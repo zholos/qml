@@ -5,7 +5,7 @@ from fractions import Fraction
 import math
 import operator
 
-from qform import qform
+from qform import *
 
 
 class Matrix:
@@ -220,26 +220,22 @@ class Matrix:
 
     @staticmethod
     def hilbert_matrix(n, m):
-        matrix = Matrix([[Fraction(1, 1+i+j) for j in range(m)]
-                                             for i in range(n)])
-        matrix.preserve = True
-        return matrix
+        return Matrix([[Fraction(1, 1+i+j) for j in range(m)]
+                                           for i in range(n)])
 
     @staticmethod
     def random_matrix(n, m, scale = 1):
         def cell(i, j):
             return Fraction.from_float(math.tan((1+i*n+j)*scale)). \
                             limit_denominator(10)
-        matrix = Matrix([[cell(i, j) for j in range(m)] for i in range(n)])
-        matrix.preserve = True
-        return matrix
+        return Matrix([[cell(i, j) for j in range(m)] for i in range(n)])
 
     @staticmethod
     def null_matrix(n, m):
         return Matrix([[None] * m for i in range(n)])
 
     def qform(self):
-        return qform(self.rows, preserve = getattr(self, 'preserve', False))
+        return qform(self.rows)
 
 
 class Random: # meaning arbitrary, not unpredictable
@@ -260,26 +256,6 @@ class Random: # meaning arbitrary, not unpredictable
         while x:
             r.append(self.pop(x))
         return r
-
-
-def test_prec(prec):
-    output("    prec:%s;" % prec)
-
-def test(name, *args, **kwargs):
-    args, result = map(qform, args[:-1]), qform(args[-1])
-
-    if "[" in name:
-        call = ";%s]" % ";".join(args)
-    elif len(args) == 1:
-        call = " %s" % args[0]
-    else:
-        call = "[%s]" % ";".join(args)
-
-    comment = kwargs.get("comment", "")
-    if comment:
-        comment = " / %s" % comment
-
-    output('    test[".qml.%s%s";"%s"];%s' % (name, call, result, comment))
 
 
 subjects = [
@@ -479,7 +455,7 @@ def test_mkron():
     test[".qml.mkron[(0 1 0;-2.5 0 3);(1 2;-3 4)]";"(0 0 1 2 0 0;0 0 -3 4 0 0;-2.5 -5 0 0 3 6;7.5 -10 0 0 -9 12)"];""")
 
 def tests():
-    test_prec("1e-9")
+    prec("1e-9")
     test_diag()
     test_mdiag()
     test_mdet()
@@ -487,17 +463,15 @@ def tests():
     test_minv()
     test_mpinv()
     test_mm()
-    test_prec("1e-8")
+    prec("1e-8")
     test_ms()
     test_mls(False)
     test_mls(True)
-    test_prec("1e-7")
+    prec("1e-7")
     test_mlsq(False)
     test_mlsq(True)
     test_mkron()
 
 
 if __name__ == "__main__":
-    def output(s):
-        print s
     tests()
