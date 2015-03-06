@@ -12,7 +12,6 @@ STRIP   = $(TOOLPREFIX)strip
 # GNU and BSD sed differ in argument parsing. This way is portable.
 SEDI = sed -i.tmp
 
-# Superfluous leading underscore appears sometimes under Windows
 sed_s+ = [[:space:]]\{1,\}
 nm_grep = $(NM) -P $(2) | sed -n 's/^\([^ ]\{1,\}\) $(1)\( .*\)*$$/\1/p'
 nm_exports = $(call nm_grep,T,$(1))

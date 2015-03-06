@@ -30,15 +30,16 @@ qml.$(DLLEXT): $(OBJS) qml.symlist qml.mapfile
 	    $(if $(WINDOWS),-lq) \
 	    $(call ld_export,qml)
 
+# Superfluous leading underscore appears sometimes under Windows
 qml.symlist: $(OBJS)
-	$(call nm_exports,$(OBJS)) | sed -n 's/^qml_/_&/p' >$@.tmp
-	$(if $(BUILD_LAPACK),,echo _xerbla_ >>$@.tmp)
+	$(call nm_exports,$(OBJS)) | \
+	    sed -n '/^_*qml_/p$(if $(BUILD_LAPACK),,;/^_*xerbla_/p)' >$@.tmp
 	mv $@.tmp $@
 
 qml.mapfile: qml.symlist
-	echo "{ global:"             >$@.tmp
-	sed 's/^_/    /;s/$$/;/' $< >>$@.tmp
-	echo "  local: *; };"       >>$@.tmp
+	echo "{ global:"       >$@.tmp
+	sed 's/.*/    &;/' $< >>$@.tmp
+	echo "  local: *; };" >>$@.tmp
 	mv $@.tmp $@
 
 
