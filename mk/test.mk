@@ -130,7 +130,7 @@ else
 endif
 
 test/stack_local: test/f_compile
-	! $(call nm_grep,b,conftest.o) | grep -q 'stkarr'
+	! $(NM) -P conftest.o | sed -n 's/^\([^ ]*\) b.*/\1/p' | grep -q stkarr
 
 test/no_cygwin: test/shared_link
 	ldd conftest.$(DLLEXT) | \
