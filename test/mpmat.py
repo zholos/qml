@@ -87,8 +87,8 @@ def test_mev():
     mev_:{[b;x]
         if[2<>count wv:.qml.mev x;'`length];
         if[not all over prec>=abs
-            (flip[(flip')(reim'')x]mmc/:vc)-
-            (w:reim'[wv 0])mc'vc:(flip')(reim'')(v:wv 1);'`check];
+            mmc[flip vc;flip(flip')(reim'')flip x]-
+            flip(w:reim'[wv 0])mc'vc:(flip')(reim'')(v:wv 1);'`check];
         / Normalize sign; LAPACK already normalized to real
         v*:1-2*0>{x a?max a:abs x}each vc[;0];
         (?'[prec>=abs w[;1];w[;0];w];?'[b;v;0n])};""")
