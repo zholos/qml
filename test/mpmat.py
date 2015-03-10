@@ -187,7 +187,11 @@ def test_mqr(pivot=False):
                 test("mqr_[0N", A, qstr("1b"))
         else:
             Q, R, P = qrp(A)
-            R = R.extract(range(R.rows), range(rank))
+            while rank and any(R[rank-1,rank-1] == R[rank-1:,j].norm()
+                               for j in range(rank, R.cols)):
+                rank -= 1 # trim non-unique pivots
+            Q = Q[:,:rank]
+            R = R[:rank,:rank]
             P = P[:rank]
             test("mqrp_[%s" % rank, A, (N(Q), N(R), P))
 
