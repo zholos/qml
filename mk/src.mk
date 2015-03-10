@@ -32,7 +32,7 @@ qml.$(DLLEXT): $(OBJS) qml.symlist qml.mapfile
 
 qml.symlist: $(OBJS)
 	$(call nm_exports,$(OBJS)) | sed -n 's/^qml_/_&/p' >$@.tmp
-	$(if $(BUILD_LAPACK),,echo _xerbla_ >>$@.tmp)
+	$(if $(all $(BUILD_BLAS),$(BUILD_LAPACK)),,echo _xerbla_ >>$@.tmp)
 	mv $@.tmp $@
 
 qml.mapfile: qml.symlist
