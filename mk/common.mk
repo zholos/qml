@@ -11,11 +11,10 @@ STRIP   = $(TOOLPREFIX)strip
 
 # GNU and BSD sed differ in argument parsing. This way is portable.
 SEDI = sed -i.tmp
+sed_s+ = [[:space:]]\{1,\}
 
 # Superfluous leading underscore appears sometimes under Windows
-sed_s+ = [[:space:]]\{1,\}
-nm_exports = $(NM) $(1) | sed -n \
-    's/^[[:alnum:]]*$(sed_s+)T$(sed_s+)_*\([[:alnum:]_]\{1,\}\)$$/\1/p'
+nm_exports = $(NM) -P $(1) | sed -n 's/^_*\([[:alnum:]_]\{1,\}\) T.*/\1/p'
 
 ld_export/-exported_symbols_list = $(LD_EXPORT) $(1).symlist
 ld_export/-Wl                    = $(LD_EXPORT),$(1).mapfile

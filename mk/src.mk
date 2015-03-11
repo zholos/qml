@@ -1,6 +1,6 @@
 include $(dir $(lastword $(MAKEFILE_LIST)))common.mk
 
-VERSION := 0.5.3
+VERSION := 0.5.4
 
 OBJS := const.o alloc.o util.o opt.o \
         libm.o cephes.o lapack.o conmin.o conmax.o nlopt.o
@@ -32,7 +32,7 @@ qml.$(DLLEXT): $(OBJS) qml.symlist qml.mapfile
 
 qml.symlist: $(OBJS)
 	$(call nm_exports,$(OBJS)) | sed -n 's/^qml_/_&/p' >$@.tmp
-	$(if $(BUILD_LAPACK),,echo _xerbla_ >>$@.tmp)
+	$(if $(all $(BUILD_BLAS),$(BUILD_LAPACK)),,echo _xerbla_ >>$@.tmp)
 	mv $@.tmp $@
 
 qml.mapfile: qml.symlist

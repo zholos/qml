@@ -1,3 +1,7 @@
+Version 0.5.4 on 2015-03-11:
+  * Fixed compiling on GCC 4.1.
+  * Updated test suite generator to use SymPy and mpmath.
+
 Version 0.5.3 on 2014-12-12:
   * Support compiling on MSYS.
 
