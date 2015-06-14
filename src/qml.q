@@ -26,6 +26,6 @@ mdim:{(count x;count x 0)};
 mdiag:{(n#x)@'til n:min mdim x};
 mrank:{sum not (d<eps*d[0]*max mdim x)|0=d:mdiag msvd[x]1};
 mpinv:{mm[x 2] flip mm[x 0]
-    ?'[(s=0)|s<eps*s[0;0]*max mdim s;s;reciprocal s:(x:msvd x)1]};
+    ?'[(s=0)|s<eps*s[0;0]*max mdim s;s*0;reciprocal s:(x:msvd x)1]};
 mev:{x@\:idesc sum each {x*x} first x:mevu x};
 mkron:{raze(raze'')(flip')x*\:\:y};
