@@ -317,6 +317,9 @@ def test_mrank():
             done.append(Z)
             test("mrank", Z, 0)
 
+        transposed = A.n > A.m
+        if transposed:
+            A = A.transpose()
         for rank in range(1, A.n+1):
             rows, free = range(A.n), []
             for i in range(rank):
@@ -328,6 +331,8 @@ def test_mrank():
                 else:
                     B.append(map(sum, zip(A[random(free)], A[random(free)])))
             B = Matrix(B)
+            if transposed:
+                B = B.transpose()
             if B.rank() == rank:
                 if B not in done:
                     done.append(B)
