@@ -1,3 +1,7 @@
+Version 0.5.5 on 2015-06-21:
+  * Fixed 'mpinv' increasing numerical rank of matrix (e.g.,
+    .qml.mrank[.qml.mpinv(1 2;3 6)]<>1).
+
 Version 0.5.4 on 2015-03-11:
   * Fixed compiling on GCC 4.1.
   * Updated test suite generator to use SymPy and mpmath.
