@@ -201,6 +201,8 @@ class Matrix:
                 inverse = transpose * (self * transpose).inverse()
             else:
                 inverse = (transpose * self).inverse() * transpose
+        elif self.rank() == 0:
+            return self.transpose()
         else:
             c, r = self._rank_factorize()
             inverse = r.pseudo_inverse() * c.pseudo_inverse()
@@ -308,15 +310,18 @@ def test_mdet():
                         test("mdet", L, 0)
                 lower = not lower
 
-def test_mrank():
+def rank_subjects():
     done = []
     random = Random()
     for A in subjects:
         Z = Matrix([[0] * A.m for i in range(A.n)])
         if Z not in done:
             done.append(Z)
-            test("mrank", Z, 0)
+            yield Z
 
+        transposed = A.n > A.m
+        if transposed:
+            A = A.transpose()
         for rank in range(1, A.n+1):
             rows, free = range(A.n), []
             for i in range(rank):
@@ -328,10 +333,16 @@ def test_mrank():
                 else:
                     B.append(map(sum, zip(A[random(free)], A[random(free)])))
             B = Matrix(B)
+            if transposed:
+                B = B.transpose()
             if B.rank() == rank:
                 if B not in done:
                     done.append(B)
-                    test("mrank", B, rank)
+                    yield B
+
+def test_mrank():
+    for A in rank_subjects():
+        test("mrank", A, A.rank())
 
 def test_minv():
     for A in subjects:
@@ -343,8 +354,12 @@ def test_minv():
             test("minv", A, B)
 
 def test_mpinv():
-    for A in subjects:
+    output("""\
+    mpinv_rank_:{.qml.mrank .qml.mpinv x};""")
+    for A in rank_subjects():
         test("mpinv", A, A.pseudo_inverse())
+        if A.rank() < min(A.n, A.m):
+            test("mpinv_rank_", A, A.rank())
 
 def test_mm():
     def emit(A, B, C):
