@@ -20,7 +20,7 @@ build: qml.$(DLLEXT)
 	    -I../include -c -o $@ $<
 
 qml.$(DLLEXT): $(OBJS) qml.symlist qml.mapfile
-	$(CC) $(FLAGS) -shared -o $@ $(OBJS) \
+	$(CC) $(FLAGS) $(LD_SHARED) -o $@ $(OBJS) \
 	    -L../lib -lprob -lconmax -lnlopt \
 	    $(LDFLAGS) \
 	    $(if $(BUILD_LAPACK),-llapack,$(LIBS_LAPACK)) \

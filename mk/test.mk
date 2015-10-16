@@ -12,8 +12,9 @@ endef
 
 define conftest.c/shared
 int x;
-int f() { return x; }
-int g() { return x; }
+int y();
+int f() { return x + y(); }
+int g() { return x + y(); }
 endef
 
 define conftest.c/blas
@@ -113,21 +114,25 @@ test/xar_version:
 test/shared_link: conftest.c
 	echo _f                          >conftest.symlist
 	echo "{ global: f; local: *; };" >conftest.mapfile
-	$(CC) -Werror -shared -o conftest.$(DLLEXT) $< \
+	$(CC) -Werror $(LD_SHARED) -o conftest.$(DLLEXT) $< \
 	    $(FLAGS) $(CFLAGS) $(LINK_FLAGS) $(call ld_export,conftest)
 
 test/ld_static: conftest.f conftest.c
 	$(FC) -Werror -c -o conftest.o $< \
 	    $(FLAGS) $(FFLAGS)
-	$(CC) -Werror -shared -o conftest.$(DLLEXT) conftest.o conftest.c \
+	$(CC) -Werror $(LD_SHARED) -o conftest.$(DLLEXT) conftest.o conftest.c \
 	    $(FLAGS) $(CFLAGS) $(call ld_static,$(LINK_FLAGS))
 
 test/ld_export: test/shared_link
 ifeq ($(WINDOWS),)
-	[ f = "$$($(call nm_exports,-D conftest.$(DLLEXT)) | grep '^[fg]$$')" ]
+# -D isn't always available; this works if not stripped
+	[ f = "$$($(call nm_exports,conftest.$(DLLEXT)) | grep '^[fg]$$')" ]
 else
 # nm doesn't work this way on Windows, so just assume the mapfile worked
 endif
+
+test/strip: test/shared_link
+	$(STRIP) $(STRIP_FLAGS) conftest.$(DLLEXT)
 
 test/stack_local: test/f_compile
 	! $(NM) -P conftest.o | sed -n 's/^\([^ ]*\) b.*/\1/p' | grep -q stkarr

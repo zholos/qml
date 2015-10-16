@@ -44,7 +44,8 @@ USAGE
 unset CONFTEST KXARCH KXVER QHOME_CONFIG CC FC CFLAGS CFLAGS_FLOAT
 unset FFLAGS FFLAGS_FLOAT FFLAGS_THREAD
 unset FLAGS FLAGS_BITS FLAGS_WINDOWS FLAGS_PIC FLAGS_PIPE
-unset TOOLPREFIX XCC CONFIG LDFLAGS LDFLAGS_LIBGCC LD_EXPORT LD_STATIC
+unset TOOLPREFIX XCC CONFIG
+unset LDFLAGS LDFLAGS_LIBGCC LD_EXPORT LD_STATIC LD_SHARED STRIP_FLAGS
 unset LIBS_FORTRAN LIBS_BLAS LIBS_LAPACK
 unset FETCH SHA256
 unset BUILD_BLAS BUILD_ATLAS WITH_BLAS WITH_LAPACK
@@ -216,6 +217,8 @@ makeenv () {
         LDFLAGS="$LDFLAGS $LDFLAGS_LIBGCC" \
         LD_EXPORT="$LD_EXPORT" \
         LD_STATIC="$LD_STATIC" \
+        LD_SHARED="$LD_SHARED" \
+        STRIP_FLAGS="$STRIP_FLAGS" \
         LIBS_FORTRAN="$LIBS_FORTRAN" \
         LIBS_BLAS="$LIBS_BLAS" \
         LIBS_LAPACK="$LIBS_LAPACK" \
@@ -408,9 +411,18 @@ makeselect "selecting additional compiler options..." "" \
            -pipe ""
 
 
+CONFTEST=shared
+case $KXARCH in
+    m*) set -- "-bundle -undefined dynamic_lookup" ;;
+    *) set -- -shared ;;
+esac
+makeselect "selecting how to compile a shared library..." \
+           "couldn't create a shared library." \
+           LD_SHARED shared_link \
+           "$@"
+
 # May compile successfully without -fPIC but then hang when calling back into q,
 # so use -fPIC by default.
-CONFTEST=shared
 makeselect "selecting shared library options..." \
            "couldn't create shared library." \
            FLAGS_PIC shared_link \
@@ -431,12 +443,27 @@ makeselect "selecting how to export specific symbols..." \
            LD_EXPORT ld_export \
            -Wl,--version-script -Wl,-M -exported_symbols_list
 
+makeselect "selecting strip options..." \
+           "couldn't strip shared library." \
+           STRIP_FLAGS strip \
+           -s "" -S
+
 
 CONFTEST=builtin
+# When linking gfortran object files with clang need to explicitly add default
+# gfortran library directories.
+dirs=
+for lib in gfortran gfortranbegin; do
+    dir=`dirname "$(quiet "$FC" $FLAGS_BITS -print-file-name=lib${lib}.a)"`
+    if [ -n "${dir%.}" ]; then
+        dirs="$dirs -L$dir"
+    fi
+done
 makeselect "selecting additional libraries for Fortran..." \
            "couldn't link C and Fortran code together." \
            LIBS_FORTRAN f_compile_c_link \
-           "" -lgfortran "-lgfortranbegin -lgfortran"
+           "" -lgfortran "-lgfortranbegin -lgfortran" \
+           "$dirs -lgfortran" "$dirs -lgfortranbegin -lgfortran"
 
 # -fPIC required for this
 # Don't want to depend on MinGW libgfortran.dll, so link statically
@@ -503,7 +530,7 @@ echo "just kidding"
 makeselect "looking for sha256 program..." \
            "sha256 program is required." \
            SHA256 sha256 \
-           sha256 sha256sum openssl
+           sha256 sha256sum shasum openssl
 
 
 
@@ -529,6 +556,8 @@ CONFIG         := $CONFIG
 LDFLAGS        := $LDFLAGS $LDFLAGS_LIBGCC
 LD_EXPORT      := $LD_EXPORT
 LD_STATIC      := $LD_STATIC
+LD_SHARED      := $LD_SHARED
+STRIP_FLAGS    := $STRIP_FLAGS
 LIBS_FORTRAN   := $LIBS_FORTRAN
 LIBS_BLAS      := $LIBS_BLAS
 BUILD_BLAS     := $BUILD_BLAS

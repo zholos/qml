@@ -5,4 +5,4 @@ CFLAGS += -Werror \
     -Wno-unused -Wno-unused-parameter
 
 build:
-	$(STRIP) -s qml.$(DLLEXT)
+	$(STRIP) $(STRIP_FLAGS) qml.$(DLLEXT)
