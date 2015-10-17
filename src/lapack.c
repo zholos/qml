@@ -47,14 +47,14 @@ take_maxwork(I info, F maxwork) {
 static F*
 take_square_matrix(K x_, I* n, int* triangular, S* err) {
     K x = convert_FF(x_);
-    if (!likely(x && (*n = xn))) {
+    if (!likely(x && (*n = qn(x)))) {
         *n = 0;
         if (!*err) *err = "type";
     }
 
     F* a = alloc_FF(n, *n, err);
     repeat (j, *n)
-        if (xK[j]->n != *n) {
+        if (qn(qK(x, j)) != *n) {
             *n = 0;
             if (!*err) *err = "length";
         }
@@ -63,7 +63,7 @@ take_square_matrix(K x_, I* n, int* triangular, S* err) {
         int upper = 1, lower = 1;
         repeat (j, *n)
             repeat (i, *n)
-                if ((a[j + i * *n] = kF(xK[j])[i]))
+                if ((a[j + i * *n] = qF(qK(x, j), i)))
                     if (i < j) // non-zero below diagonal, so not upper
                         upper = 0;
                     else if (i > j) // non-zero above diagonal, so not lower
@@ -72,7 +72,7 @@ take_square_matrix(K x_, I* n, int* triangular, S* err) {
     } else
         repeat (j, *n)
             repeat (i, *n)
-                a[j + i * *n] = kF(xK[j])[i];
+                a[j + i * *n] = qF(qK(x, j), i);
 
     if (x) q0(x);
     return a;
@@ -88,7 +88,7 @@ take_matrix(K x_, I* ldr, I* m, I* n, int* column, S* err) {
     if (column && column != alloc_square) {
         K x = convert_F(x_);
         if (x) {
-            *m = xn, *n = 1;
+            *m = qn(x), *n = 1;
             *ldr = max_i(*ldr, *m); // if ldr == m, *ldr is set above
             F* a = alloc_F(ldr, err);
             if (!*ldr)
@@ -107,7 +107,7 @@ take_matrix(K x_, I* ldr, I* m, I* n, int* column, S* err) {
         if (!*err) *err = "type";
     }
     repeat (j, *m)
-        if (xK[j]->n != *n) {
+        if (qn(qK(x, j)) != *n) {
             *m = *n = 0;
             if (!*err) *err = "length";
         }
@@ -119,7 +119,7 @@ take_matrix(K x_, I* ldr, I* m, I* n, int* column, S* err) {
         *m = *n = 0;
     repeat (j, *m)
         repeat (i, *n)
-            a[j + i * *ldr] = kF(xK[j])[i];
+            a[j + i * *ldr] = qF(qK(x, j), i);
     if (x) q0(x);
     return a;
 }
@@ -137,7 +137,7 @@ make_matrix(const F* a, I ldr, I m, I n, int column) {
             return make_matrix(NULL, 0, n, m, 0);
         K r = ktn(0, n);
         repeat (i, n)
-            kK(r)[i] = make_F(a + i*ldr, m);
+            qK(r, i) = make_F(a + i*ldr, m);
         return r;
     }
 
@@ -172,13 +172,13 @@ make_matrix(const F* a, I ldr, I m, I n, int column) {
         repeat (j, m) {
             K x = ktn(KF, n);
             repeat (i, n)
-                xF[i] = a[j + i*ldr];
-            kK(r)[j] = x;
+                qF(x, i) = a[j + i*ldr];
+            qK(r, j) = x;
         }
     else {
         K x = make_F_null(n);
         repeat (j, m)
-            kK(r)[j] = r1(x);
+            qK(r, j) = r1(x);
         q0(x);
     }
     return r;
@@ -191,8 +191,8 @@ make_complex(F a, F b) {
         return kf(a);
     else {
         K x = ktn(KF, 2);
-        xF[0] = a;
-        xF[1] = b;
+        qF(x, 0) = a;
+        qF(x, 1) = b;
         return x;
     }
 }
@@ -210,7 +210,7 @@ make_complex_vector(const F* a, const F* b, int n, int step) {
     if (a) {
         K x = ktn(KF, n);
         repeat (i, n)
-            xF[i] = a[i*step];
+            qF(x, i) = a[i*step];
         return x;
     } else
         return make_F_null(n);
@@ -218,7 +218,7 @@ make_complex_vector(const F* a, const F* b, int n, int step) {
 complex:;
     K x = ktn(0, n);
     repeat (i, n)
-        xK[i] = make_complex(a[i * step], b[i * step]);
+        qK(x, i) = make_complex(a[i * step], b[i * step]);
     return x;
 }
 
@@ -393,25 +393,25 @@ qml_mevu(K x) {
     free_F(a);
 
     x = ktn(0, 2);
-    xK[0] = make_complex_vector(info ? NULL : lr, info ? NULL : li, n, 1);
+    qK(x, 0) = make_complex_vector(info ? NULL : lr, info ? NULL : li, n, 1);
 
-    if (xK[0]->t) // no complex elements (also when info)
-        xK[1] = make_matrix(info ? NULL : ev, n, n, n, make_transposed);
+    if (qt(qK(x, 0))) // no complex elements (also when info)
+        qK(x, 1) = make_matrix(info ? NULL : ev, n, n, n, make_transposed);
     else {
         assert(!info);
-        xK[1] = ktn(0, n);
+        qK(x, 1) = ktn(0, n);
         repeat (j, n) {
             if (li[j] != 0 && j+1 < n) {
-                K* q1 = kK(kK(xK[1])[j]   = ktn(0, n));
-                K* q2 = kK(kK(xK[1])[j+1] = ktn(0, n));
+                K q1 = qK(qK(x, 1), j)   = ktn(0, n);
+                K q2 = qK(qK(x, 1), j+1) = ktn(0, n);
                 repeat (i, n) {
                     F a = ev[i + j*n], b = ev[i + (j+1)*n];
-                    q1[i] = make_complex(a,  b);
-                    q2[i] = make_complex(a, -b);
+                    qK(q1, i) = make_complex(a,  b);
+                    qK(q2, i) = make_complex(a, -b);
                 }
                 j++;
             } else
-                kK(xK[1])[j] = make_F(ev + j*n, n);
+                qK(qK(x, 1), j) = make_F(ev + j*n, n);
         }
     }
 
@@ -578,16 +578,16 @@ qml_msvd(K x) {
     free_F(a);
 
     x = ktn(0, 3);
-    xK[0] = make_matrix(info ? NULL : u, m, m, m, 0);
-    xK[1] = ktn(0, m);
+    qK(x, 0) = make_matrix(info ? NULL : u, m, m, m, 0);
+    qK(x, 1) = ktn(0, m);
     repeat (j, m) {
-        F* q = kF(kK(xK[1])[j] = ktn(KF, n));
+        K q = qK(qK(x, 1), j) = ktn(KF, n);
         repeat (i, n)
-            q[i] = 0;
+            qF(q, i) = 0;
         if (j < n)
-            q[j] = info ? nf : s[j];
+            qF(q, j) = info ? nf : s[j];
     }
-    xK[2] = make_matrix(info ? NULL : vt, n, n, n, make_transposed);
+    qK(x, 2) = make_matrix(info ? NULL : vt, n, n, n, make_transposed);
     free_F(vt);
     free_F(u);
     free_F(s);
@@ -651,7 +651,7 @@ qml_poly(K x_) {
 
     I lwork_query = -1;
     F maxwork[2];
-    if (xt)
+    if (qt(x))
         dgeev_("N", "N", &n, NULL, &n, NULL, NULL, NULL, &n, NULL, &n,
                maxwork, &lwork_query,       &info);
     else
