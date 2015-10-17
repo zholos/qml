@@ -52,7 +52,7 @@ nloptmin(K fun, K con, K start_, I maxiter, F tolcon,
     if (nparm > 10000) // approximate limit before malloc overflow in nldrmd.c
         if (!err) err = "limit";
 
-    I ncon = qt(con) ? 1 : qn(con);
+    I ncon = qt(con) ? 1 : qnw(con);
     if (ncon > 10000) // with nparm limit, approximate limit for cobyla.c
         if (!err) err = "limit";
 

@@ -202,7 +202,7 @@ copy:;
 
 
 int
-item_I(I* r, K x, I i) {
+item_I(I* r, K x, L i) {
     assert(has_n(x) && i < qn(x));
     switch (xt) {
     case KJ:
@@ -230,7 +230,7 @@ item_I(I* r, K x, I i) {
 
 
 int
-item_F(F* r, K x, I i) {
+item_F(F* r, K x, L i) {
     assert(has_n(x) && i < qn(x));
     switch (xt) {
     case KF:
@@ -264,7 +264,7 @@ item_F(F* r, K x, I i) {
 
 
 K
-make_F_null(I n) {
+make_F_null(L n) {
     K x = ktn(KF, n);
     repeat (i, n)
         xF[i] = nf;
@@ -273,7 +273,7 @@ make_F_null(I n) {
 
 
 K
-make_F(const F* a, I n) {
+make_F(const F* a, L n) {
     K x = ktn(KF, n);
     memcpy(xF, a, n * sizeof(F));
     return x;

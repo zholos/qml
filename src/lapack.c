@@ -47,7 +47,7 @@ take_maxwork(I info, F maxwork) {
 static F*
 take_square_matrix(K x_, I* n, int* triangular, S* err) {
     K x = convert_FF(x_);
-    if (!likely(x && (*n = qn(x)))) {
+    if (!likely(x && (*n = qnw(x)))) {
         *n = 0;
         if (!*err) *err = "type";
     }
@@ -88,7 +88,7 @@ take_matrix(K x_, I* ldr, I* m, I* n, int* column, S* err) {
     if (column && column != alloc_square) {
         K x = convert_F(x_);
         if (x) {
-            *m = qn(x), *n = 1;
+            *m = qnw(x), *n = 1;
             *ldr = max_i(*ldr, *m); // if ldr == m, *ldr is set above
             F* a = alloc_F(ldr, err);
             if (!*ldr)
@@ -102,7 +102,7 @@ take_matrix(K x_, I* ldr, I* m, I* n, int* column, S* err) {
     }
 
     K x = convert_FF(x_);
-    if (!likely(x && (*m = qn(x)) && (*n = qn(qK(x, 0))))) {
+    if (!likely(x && (*m = qnw(x)) && (*n = qnw(qK(x, 0))))) {
         *m = *n = 0;
         if (!*err) *err = "type";
     }
@@ -624,10 +624,12 @@ qml_poly(K x_) {
                 return krr("length");
             }
         }
-    if (!(n = qn(x))) {
+    if (!(n = qnw(x))) {
         q0(x);
         return krr("length");
     }
+    if (n >= wi)
+        if (!err) err = "limit";
     n--;
 
     F lca, lcb;

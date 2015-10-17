@@ -50,7 +50,7 @@ solvemin(K fun, K con, K start_, I maxiter, F tolcon, I steps,
     if (slp && (rk || steps > 0))
         return krr("opt");
 
-    I ifun, numgr = qt(con) ? 1 : qn(con);
+    I ifun, numgr = qt(con) ? 1 : qnw(con);
     if (fun) { // min or conmin
         numgr = add_size(numgr, 1, 1);
         ifun = 1;

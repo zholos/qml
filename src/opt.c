@@ -6,7 +6,7 @@
 
 
 static int
-get(K x, I i, int flat, const S s, const struct optn* n, union optv* v)
+get(K x, L i, int flat, const S s, const struct optn* n, union optv* v)
 {
     if (!s)
         return 0;

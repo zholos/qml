@@ -21,7 +21,7 @@ write_param(K x, F* a)
     case KF:
         if (a)
             memcpy(a, xF, qn(x) * sizeof(F));
-        return qn(x);
+        return qnw(x);
     case 0:;
         I n = 0;
         repeat (i, qn(x))

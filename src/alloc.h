@@ -16,6 +16,11 @@ void free_F(F* p);
 
 
 static inline I
+qnw(K x) {
+    return likely(qn(x) <= wi) ? qn(x) : wi;
+}
+
+static inline I
 add_size(I a, I m, I n) {
     if (!likely(!n || m <= (wi - a) / n))
         return wi;
