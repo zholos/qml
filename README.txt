@@ -190,6 +190,6 @@ Constants and functions
                            `nm:    use Nelder–Mead method (default: CONMAX)
                            `sbplx: use Subplex method     (default: CONMAX)
   conmin[f;cons;x0]       find constrained minimum (functions cons>=0)
-  conminx[opt;f;cons;x0]  min[] with same options as solvex[], plus
+  conminx[opt;f;cons;x0]  conmin[] with same options as solvex[], plus
                            `lincon: assume linear cons    (default: nonlinear)
                            `cobyla: use COBYLA method     (default: CONMAX)
