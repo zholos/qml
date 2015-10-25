@@ -351,7 +351,7 @@ def test_conmin():
          [[Fraction(3, 4), Fraction(1, 4), 0]],
          linear = True)
     emit("{neg x+2*y}",
-         ["{25-(x*x)+y*y}", "{1+(3*x)-x*y*(3+1%.qml.sqrt 11)%.qml.sqrt 14}", "{(67+2*.qml.sqrt 154)-(x*x)+(2*x*y)+4*y*y},{x-.5*y}"],
+         ["{25-(x*x)+y*y}", "{1+(3*x)-x*y*(3+1%.qml.sqrt 11)%.qml.sqrt 14}", "{(67+2*.qml.sqrt 154)-(x*x)+(2*x*y)+4*y*y}", "{x-.5*y}"],
          [[0, 0], [-2, -8], [-7, 15]],
          ".qml.sqrt 11 14")
     emit("{y;0}",
