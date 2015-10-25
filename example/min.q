@@ -13,19 +13,19 @@ b:.qml.nicdf .005+n?.99;
 
 / solve with generic function
 1"solve:      ";
-\t x1:first .qml.solve[{[b;A]b-sum A*}'[b;A];enlist n#0];
+\t x1:first .qml.solve[b{x-y$}'A;enlist n#0];
 
 / solve with optimization as least-squares problem
 opts:`iter,1000000;
 1"min:        ";
-\t x2:first .qml.minx[opts][sum{x*x}b-.qml.mm[A]@;enlist n#0];
+\t x2:first .qml.minx[opts][{x$x}b-A mmu;enlist n#0];
 1"minx`nm:    ";
-\t x3:first .qml.minx[`nm,opts][sum{x*x}b-.qml.mm[A]@;enlist n#0];
+\t x3:first .qml.minx[`nm,opts][{x$x}b-A mmu;enlist n#0];
 1"minx`sbplx: ";
-\t x4:first .qml.minx[`sbplx,opts][sum{x*x}b-.qml.mm[A]@;enlist n#0];
+\t x4:first .qml.minx[`sbplx,opts][{x$x}b-A mmu;enlist n#0];
 
 / check results
-if[1e-7<{max -1+(b%x)|x%b}.qml.mm[A]x0;'`incorrect];
+if[1e-7<{max -1+(b%x)|x%b}A mmu x0;'`incorrect];
 if[1e-3<max{max -1+(x0%x)|x%x0}each(x1;x2;x3;x4);'`different];
 
 -1"";
@@ -42,13 +42,13 @@ b:.qml.nicdf .005+m?.99;
 
 / solve with optimization
 1"min:        ";
-\t x1:first .qml.minx[opts][sum{x*x}b-.qml.mm[A]@;enlist n#0];
+\t x1:first .qml.minx[opts][{x$x}b-A mmu;enlist n#0];
 1"minx`nm:    ";
-\t x2:first .qml.minx[`nm,opts][sum{x*x}b-.qml.mm[A]@;enlist n#0];
+\t x2:first .qml.minx[`nm,opts][{x$x}b-A mmu;enlist n#0];
 1"minx`sbplx: ";
-\t x3:first .qml.minx[`sbplx,opts][sum{x*x}b-.qml.mm[A]@;enlist n#0];
+\t x3:first .qml.minx[`sbplx,opts][{x$x}b-A mmu;enlist n#0];
 
 / check results
-if[1e-7<{max -1+(y%x)|x%y}[.qml.mm[A_].qml.mm[A]x0;.qml.mm[A_:flip A]b];
+if[1e-7<{max -1+(y%x)|x%y}[flip[A]mmu A mmu x0;flip[A]mmu b];
    '`incorrect];
 if[1e-3<max{max -1+(x0%x)|x%x0}each(x1;x2;x3);'`different];
