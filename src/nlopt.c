@@ -116,7 +116,14 @@ nloptmin(K fun, K con, K start_, I maxiter, F tolcon,
             // minf is set to some default value that's not important here
             // sig = "nan" will be set below
             goto skip_call;
-        };
+        }
+
+    if (nparm == 0) {
+        // COBYLA intends this but tries to read xstep[0] first
+        result = NLOPT_SUCCESS;
+        // sig = "feas" will be set below if necessary
+        goto skip_call;
+    }
 
     if (con != empty_con) {
         nlopt_constraint fc = {

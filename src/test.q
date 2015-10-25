@@ -3944,10 +3944,15 @@ pass:-1;while[2>pass+:1;
           x=2;(all null@;::;prec>abs@;0<;`feas=)@'
                   .qml.solvex[`full`quiet`slp`tol,0;f;0.,0]
                   `x`last`err`iter`sig;
+          x=3;`feas~@[.qml.solve[{1}];enlist 0#0;`$];
           '`]};
     test["solvex_opt 0";"6 -7"];
     test["solvex_opt 1";"(6 -7;1)"];
     test["solvex_opt 2";"(1;6 -7;1;1;1)"];
+    test["solvex_opt 3";"1"];
+    test["solve_n[::;{0},{0};enlist 0#0.]";"enlist ()"];
+    test["solve_n[::;'[neg;]each {0},{0};enlist 0#0.]";"enlist ()"];
+    test["solve_n[::;('[neg;]{0};{0});enlist 0#0.]";"enlist ()"];
     test["solve_n[::;(1-.qml.log@),{(x-.qml.e)*x-1};-1]";"0n"]; / was invalid read
     test["solve_n[::;'[neg;]each {(x-.qml.e)*x-1},(1-.qml.log@);-1]";"0n"]; / was invalid read
     test["solve_n[::;('[neg;]{(x-.qml.e)*x-1};(1-.qml.log@));-1]";"0n"]; / was invalid read
@@ -4052,6 +4057,9 @@ pass:-1;while[2>pass+:1;
     test["minx_opt[3;()]";"1"];
     test["minx_opt[3;`nm`full]";"1"];
     test["minx_opt[4;()]";"1"];
+    test["minx_n[::;();{-1};enlist 0#0.]";"enlist ()"];
+    test["minx_n[::;`nm;{-1};enlist 0#0.]";"enlist ()"];
+    test["minx_n[::;`sbplx;{-1};enlist 0#0.]";"enlist ()"];
     test["minx_n[::;();{(a*a:x-1)+10*b*b:y-1+x*x};2#0]";"1 2"];
     test["minx_n[::;();{(a*a:x-1)+10*b*b:y-1+x*x};2#5]";"1 2"];
     test["minx_n[::;();{(a*a:x-1)+10*b*b:y-1+x*x};-10 10]";"1 2"];
@@ -4113,6 +4121,7 @@ pass:-1;while[2>pass+:1;
           x=4;`nan`nan~@[.qml.conminx[y,`full;{x};;0n];;`$] each ({x};());
           x=5;`type`foo`type`rank~@[.qml.conmin[;{x};0];;`$] each
                   0,{'`foo},{()},{y};
+          x=6;`feas~@[.qml.conminx[y;{0};{-1}];enlist 0#0;`$];
           '`]};
     test["conminx_opt[0;()]";"-3 5%4"];
     test["conminx_opt[1;()]";"(-3 5%4;7%4;0 1%4;1)"];
@@ -4121,6 +4130,10 @@ pass:-1;while[2>pass+:1;
     test["conminx_opt[3;`cobyla]";"0 1 0 1"];
     test["conminx_opt[4;`cobyla]";"1"];
     test["conminx_opt[5;()]";"1"];
+    test["conminx_opt[6;()]";"1"];
+    test["conminx_opt[6;`cobyla]";"1"];
+    test[".qml.conminx[`quiet;{-1};{1};enlist 0#0.]";"enlist ()"];
+    test[".qml.conminx[`quiet`cobyla;{-1};{1};enlist 0#0.]";"enlist ()"];
     test[".qml.conminx[`quiet;{(a*a:x-1)+10*b*b:y-1+x*x};();2#0]";"1 2"];
     test[".qml.conminx[`quiet`cobyla;{(a*a:x-1)+10*b*b:y-1+x*x};();2#0]";"1 2"];
     test[".qml.conminx[`quiet;{(a*a:x-1)+10*b*b:y-1+x*x};();2#5]";"1 2"];
