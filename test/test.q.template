@@ -1,6 +1,7 @@
 if[any"-cd"~/:.z.x;
     .qml.dll:` sv hsym[`$system"cd"],`qml]; / full path stops Windows searching
 stop:any"-stop"~/:.z.x;
+verbose:any"-verbose"~/:.z.x;
 patterns:.z.x 1+where"-like"~/:.z.x;
 
 \l qml.q
@@ -17,6 +18,7 @@ mttests:enlist[`]!enlist();
 passed:total:2#0;
 test:{
     if[not $[count patterns;any x like/:patterns;1b];:(::)];
+    if[verbose;-1"Check ",x," = ",y];
     v:@[value;x;`$];
     if[$[8>system"s";0b;pass<>0;0b;reps=0;0b;-11h=type v;0b;
             (-11h=type p 0) and 0h=type p:parse x;1b;'`run];
