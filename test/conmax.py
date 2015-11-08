@@ -25,16 +25,24 @@ def test_root_opt():
                   `x`last`err`iter`sig;
           x=3;y~@[(),.qml.root[;-1 1]@;z;`$];
           x=4;y~@[(),.qml.root[::;]@;z;`$];
+          x=5;y~@[(),.qml.rootx[;::;-1 1]@;z;`$];
           '`]};
     test["rootx_opt[0;::;::]";"5"];
     test["rootx_opt[1;::;::]";"5 1"];
     test["rootx_opt[2;::;::]";"1 7 8 200 1"];
-    test["rootx_opt[3;`type;0]";"1"];
+    test["rootx_opt[3;`type;`]";"1"];
+    test["rootx_opt[3;`type;()]";"1"];
+    test["rootx_opt[3;`foo;{'`foo}]";"1"];
+    test["rootx_opt[3;`type;{()}]";"1"];
+    test["rootx_opt[3;`rank;{y}]";"1"];
     test["rootx_opt[4;`type;0]";"1"];
-    test["rootx_opt[4;`length;enlist 0]";"1"];
+    test["rootx_opt[4;`length;()]";"1"];
+    test["rootx_opt[4;`length;1#0]";"1"];
+    test["rootx_opt[4;`length;3#0]";"1"];
     test["rootx_opt[4;`type;`,0]";"1"];
     test["rootx_opt[4;`type;0,`]";"1"];
-    test["rootx_opt[4;`sign;1 1]";"1"];""")
+    test["rootx_opt[4;`sign;1 1]";"1"];
+    test["rootx_opt[5;`opt;`foo]";"1"];""")
 
 
 def test_root():
@@ -105,14 +113,25 @@ def test_line_opt():
           x=2;{(null y 0;x[y 1]-y 2;0<y 3;`iter=y 4)}[f]
                   .qml.linex[`full`quiet`iter`tol!1 1 3 0;f;0.;1.]
                   `x`last`f`iter`sig;
-          x=3;y~@[(),.qml.line .;z;`$];
+          x=3;y~@[(),.qml.linex[;f;0;1]@;z;`$];
+          x=4;y~@[(),.qml.line[;0;1]@;z;`$];
+          x=5;y~@[(),.qml.line[abs;;].;z;`$];
+          x=6;y~@[(),.qml.linex[;abs;0;1]@;z;`$];
           '`]};
     test["linex_opt[0;::;::]";"4"];
     test["linex_opt[1;::;::]";"4 -1 1"];
     test["linex_opt[2;::;::]";"1 0 1 1"];
-    test["linex_opt[3;`type;(`;0;0)]";"1"];
-    test["linex_opt[3;`type;(abs;`;0)]";"1"];
-    test["linex_opt[3;`type;(abs;0;`)]";"1"];""")
+    test["linex_opt[3;`iter;`iter,1]";"1"];
+    test["linex_opt[4;`type;`]";"1"];
+    test["linex_opt[4;`type;()]";"1"];
+    test["linex_opt[4;`foo;{'`foo}]";"1"];
+    test["linex_opt[4;`type;{()}]";"1"];
+    test["linex_opt[4;`rank;{y}]";"1"];
+    test["linex_opt[5;`type;`,0]";"1"];
+    test["linex_opt[5;`type;0,`]";"1"];
+    test["linex_opt[5;`type;(`;enlist 0)]";"1"];
+    test["linex_opt[5;`type;(enlist 0;`)]";"1"];
+    test["linex_opt[6;`opt;`foo]";"1"];""")
 
 
 def test_line():
@@ -178,11 +197,20 @@ def test_solve_opt():
                   .qml.solvex[`full`quiet`slp`tol,0;f;0.,0]
                   `x`last`err`iter`sig;
           x=3;y~@[(),.qml.solve[{1};]@;z;`$];
+          x=4;y~@[(),.qml.solve[;0]@;z;`$];
+          x=5;y~@[(),.qml.solvex[;{0};0]@;z;`$];
           '`]};
     test["solvex_opt[0;::;::]";"6 -7"];
     test["solvex_opt[1;::;::]";"(6 -7;1)"];
     test["solvex_opt[2;::;::]";"(1;6 -7;1;1;1)"];
-    test["solvex_opt[3;`feas;enlist 0#0]";"1"];""")
+    test["solvex_opt[3;`feas;enlist 0#0]";"1"];
+    test["solvex_opt[4;`type;`]";"1"];
+    test["solvex_opt[4;`foo;{'`foo}]";"1"];
+    test["solvex_opt[4;`type;{()}]";"1"];
+    test["solvex_opt[4;`rank;{y}]";"1"];
+    test["solvex_opt[5;`opt;`foo]";"1"];
+    test["solvex_opt[5;`opt;`slp`rk]";"1"];
+    test["solvex_opt[5;`opt;`slp`steps,10]";"1"];""")
 
 
 def test_solve():
@@ -252,6 +280,8 @@ def test_min_opt():
                   `x`last`f`iter`sig;
           x=3;(0#0.)~last .qml.min[{y;0};(0;())];
           x=4;y~@[(),m[abs;]@;z;`$];
+          x=5;y~@[(),m[;0]@;z;`$];
+          x=6;y~@[(),.qml.minx[;{0};0]@;z;`$];
           '`]};
     test["minx_opt[0;();::;::]";"4 1%7"];
     test["minx_opt[1;();::;::]";    "(4 1%7;-2%7;1)"];
@@ -267,9 +297,33 @@ def test_min_opt():
                (which, opt, err, arg))
 
     which = 4
-    for opt in ["()", "`nm"]:
+    for opt in ["()", "`nm", "`sbplx"]:
         emit("`type", "`")
         emit("`nan", "0n")
+
+    for opt in ["`nm", "`sbplx"]:
+        emit("`limit", "10001#0")
+        emit("`limit", "100 cut 10001#0")
+
+    which = 5
+    for opt in ["()", "`nm", "`sbplx"]:
+        emit("`type", "`")
+        emit("`type", "()")
+        emit("`type", "`,0")
+        emit("`foo", "{'`foo}")
+        emit("`type", "{()}")
+        emit("`rank", "{y}")
+
+    which = 6
+    opt = "::"
+    emit("`opt", "`foo")
+    emit("`opt", "`slp`rk")
+    emit("`opt", "`slp`steps,10")
+    emit("`opt", "`nm`sbplx")
+    emit("`opt", "`nm`slp")
+    emit("`opt", "`nm`rk")
+    emit("`opt", "`nm`tol,1e-6")
+    emit("`opt", "`nm`steps,10")
 
 
 def test_min():
@@ -318,7 +372,9 @@ def test_conmin_opt():
                   .qml.conminx[opt,`full`quiet;f;c1:c,{neg y};0 0];
           x=4;y~@[(),m[;{x};0]@;z;`$];
           x=5;y~@[(),m[{x};;0n]@;z;`$];
-          x=6;y~@[(),m[{0};{-1};]@;z;`$];
+          x=6;y~@[(),m[{x};;0]@;z;`$];
+          x=7;y~@[(),m[{0};{-1},{1};]@;z;`$];
+          x=8;y~@[(),.qml.conminx[;{0};();0]@;z;`$];
           '`]};
     test["conminx_opt[0;();::;::]";"-3 5%4"];
     test["conminx_opt[1;();::;::]";"(-3 5%4;7%4;0 1%4;1)"];
@@ -331,8 +387,10 @@ def test_conmin_opt():
                (which, opt, err, arg))
 
     which = 4
-    for opt in ["()"]:
-        emit("`type", "0")
+    for opt in ["()", "`cobyla"]:
+        emit("`type", "`")
+        emit("`type", "()")
+        emit("`type", "`,0")
         emit("`foo", "{'`foo}")
         emit("`type", "{()}")
         emit("`rank", "{y}")
@@ -344,7 +402,34 @@ def test_conmin_opt():
 
     which = 6
     for opt in ["()", "`cobyla"]:
+        emit("`type", "`")
+        emit("`type", "{0},0b,{0}")
+        emit("`foo", "{'`foo}")
+        emit("`foo", "{0},{'`foo},{0}")
+        emit("`type", "{()}")
+        emit("`type", "{0},{()},{0}")
+        emit("`rank", "{y}")
+        emit("`rank", "{0},{y},{0}")
+
+    for opt in ["`cobyla"]:
+        emit("`limit", "10001#{0}")
+
+    which = 7
+    for opt in ["()", "`cobyla", "`cobyla`full"]:
         emit("`feas", "enlist 0#0")
+
+    for opt in ["`cobyla"]:
+        emit("`limit", "10001#0")
+        emit("`limit", "100 cut 10001#0")
+
+    which = 8
+    opt = "::"
+    emit("`opt", "`foo")
+    emit("`opt", "`slp`rk")
+    emit("`opt", "`slp`steps,10")
+    emit("`opt", "`cobyla`slp")
+    emit("`opt", "`cobyla`rk")
+    emit("`opt", "`cobyla`steps,10")
 
 
 def test_conmin():
