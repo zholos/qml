@@ -56,7 +56,8 @@ solvemin(K fun, K con, K start_, I maxiter, F tolcon, I steps,
 
     repeat (i, numgr) {
         K f = fun && !i ? fun : qt(con) ? con : qK(con, i-!!fun);
-        if (!callable(f))
+        if (!(callable(f) || !qt(f) &&
+                (qn(f) == 2) && callable(qK(f, 0)) && callable(qK(f, 1))))
             return krr("type");
     }
 

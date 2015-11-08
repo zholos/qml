@@ -10,35 +10,49 @@
 #include "opt.h"
 
 
-static I
-write_param(K x, F* a)
+static F*
+write_param(K x, K y, F* a, int step, int* sign, I* n)
 {
+    if (qt(x) != qt(y) || has_n(x) && qn(x) != qn(y)) {
+        x = y;
+        *sign = 0;
+    }
     switch (qt(x)) {
     case -KF:
-        if (a)
-            *a = qf(x);
-        return 1;
+        if (a) {
+            *a = *sign * qf(x);
+            a += step;
+        }
+        if (n)
+            *n = add_size(*n, 1, 1);
+        break;
     case KF:
         if (a)
-            memcpy(a, xF, qn(x) * sizeof(F));
-        return qnw(x);
-    case 0:;
-        I n = 0;
+            repeat (i, qn(x)) {
+                *a = *sign * qF(x, i);
+                a += step;
+            }
+        if (n)
+            *n = add_size(*n, qnw(x), 1);
+        break;
+    case 0:
         repeat (i, qn(x))
-            n = add_size(n, write_param(qK(x, i), a ? a + n : a), 1);
-        return n;
+            a = write_param(qK(x, i), qK(y, i), a, step, sign, n);
+        break;
     default:
         assert(0);
-        return 0;
     }
+    return a;
 }
 
 
 F*
 take_param(K x, I* n, S* err) {
-    *n = write_param(x, NULL);
+    *n = 0;
+    write_param(x, x, NULL, 1, NULL, n);
     F* a = alloc_F(n, err);
-    write_param(x, a);
+    int sign = 1;
+    write_param(x, x, a, 1, &sign, NULL);
     return a;
 }
 
@@ -65,11 +79,11 @@ make_param(K x, F* param, K* r) {
 }
 
 
-F
-call_param(struct call_info* info, int sign, K f, F* param)
+static K
+call_param_K(struct call_info* info, K f, F* param)
 {
     if (info->error != no_error)
-        return 0;
+        return NULL;
 
     K a;
     if (info->arg)
@@ -79,14 +93,12 @@ call_param(struct call_info* info, int sign, K f, F* param)
 
     K x = dot(f, a);
     q0(a);
-    if (x && compatible_f(x)) {
-        F v = convert_f(x);
-        q0(x);
-        if (isnan(v)) // protect optimization routines from NaNs
-            return wf; // this is -wf for ">=" constraints
-        return sign * v;
-    }
+    return x;
+}
 
+static void
+call_handle_error(struct call_info* info, K x)
+{
     // function didn't return a float as we'd hoped
     if (!x || qt(x) == -128)
         info->error = x;
@@ -94,6 +106,20 @@ call_param(struct call_info* info, int sign, K f, F* param)
         info->error = krr(callable(x) ? "rank" : "type");
         q0(x);
     }
+}
+
+F
+call_param(struct call_info* info, int sign, K f, F* param)
+{
+    K x = call_param_K(info, f, param);
+    if (x && compatible_f(x)) {
+        F v = convert_f(x);
+        q0(x);
+        if (isnan(v)) // protect optimization routines from NaNs
+            return wf; // this is -wf for ">=" constraints
+        return sign * v;
+    }
+    call_handle_error(info, x);
     return 0;
 }
 
@@ -122,10 +148,25 @@ eval_param(struct eval_info* info,
         contyp = 2;
     }
 
-    F v = call_param(&info->call, sign, f, param);
+    F v = call_param(&info->call, sign, qt(f) ? f : qK(f, 0), param);
     if (grad) {
         // CONMAX can do this automatically, but we've already set up the call
-        if (contyp == -1) // linear function
+        if (!qt(f)) { // explicit gradient function
+            K x = call_param_K(&info->call, qK(f, 1), param);
+            K f = x ? convert_FFF(x) : NULL;
+            if (!f)
+                sign = 0;
+            // zero out grad on error
+            // user might pass f = info->call.start, don't use as flag
+            write_param(f ? f : info->call.start, info->call.start,
+                        grad, grad_step, &sign, NULL);
+            if (f)
+                q0(f);
+            if (sign)
+                q0(x);
+            else
+                call_handle_error(&info->call, x);
+        } else if (contyp == -1) // linear function
             // don't need a centered difference for linear constraints
             repeat (i, n) {
                 F p = param[i];

@@ -43,7 +43,7 @@ nloptmin(K fun, K con, K start_, I maxiter, F tolcon,
 
     repeat(i, 1+ncon) {
         K f = !i ? fun : qt(con) ? con : qK(con, i-1);
-        if (!callable(f))
+        if (!callable(f)) // no nlopt methods use explicit gradient
             return krr("type");
     }
 
