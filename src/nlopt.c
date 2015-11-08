@@ -37,8 +37,15 @@ nloptmin(K fun, K con, K start_, I maxiter, F tolcon,
     // min     callable  empty list        0=nl, 1=sbplx
     // conmin  callable  callable or list  0=cobyla
 
-    if (!callable(fun) || !callable(con) && qt(con) != 0)
-        return krr("type");
+    I ncon = qt(con) ? 1 : qnw(con);
+    if (ncon > 10000) // with nparm limit, approximate limit for cobyla.c
+        return krr("limit");
+
+    repeat(i, 1+ncon) {
+        K f = !i ? fun : qt(con) ? con : qK(con, i-1);
+        if (!callable(f))
+            return krr("type");
+    }
 
     K start = convert_FFF(start_);
     if (!start)
@@ -50,10 +57,6 @@ nloptmin(K fun, K con, K start_, I maxiter, F tolcon,
     F* param = take_param(start, &nparm, &err);
 
     if (nparm > 10000) // approximate limit before malloc overflow in nldrmd.c
-        if (!err) err = "limit";
-
-    I ncon = qt(con) ? 1 : qnw(con);
-    if (ncon > 10000) // with nparm limit, approximate limit for cobyla.c
         if (!err) err = "limit";
 
     F* xstep = alloc_F(&nparm, &err);

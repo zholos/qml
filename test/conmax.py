@@ -205,6 +205,7 @@ def test_solve_opt():
     test["solvex_opt[2;::;::]";"(1;6 -7;1;1;1)"];
     test["solvex_opt[3;`feas;enlist 0#0]";"1"];
     test["solvex_opt[4;`type;`]";"1"];
+    test["solvex_opt[4;`type;`,0]";"1"];
     test["solvex_opt[4;`foo;{'`foo}]";"1"];
     test["solvex_opt[4;`type;{()}]";"1"];
     test["solvex_opt[4;`rank;{y}]";"1"];
@@ -403,7 +404,7 @@ def test_conmin_opt():
     which = 6
     for opt in ["()", "`cobyla"]:
         emit("`type", "`")
-        emit("`type", "{0},0b,{0}")
+        emit("`type", "{0},`,{0}")
         emit("`foo", "{'`foo}")
         emit("`foo", "{0},{'`foo},{0}")
         emit("`type", "{()}")
