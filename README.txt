@@ -158,8 +158,7 @@ Constants and functions
   msvd[matrix]    singular value decomposition: (U; Sigma; V)
   mkron[A;B]      Kronecker product
 
-  poly[coef]      roots of a polynomial (highest-degree coefficient first,
-                    can be complex)
+  poly[coef]      roots of a polynomial (highest-degree coefficient first)
 
   mls[A;B]        solve B=A mm X
   mlsx[opt;A;B]   mls[] with options

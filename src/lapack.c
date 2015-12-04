@@ -201,16 +201,16 @@ make_complex(F a, F b) {
 // a and b can be null
 // returns xt==0 when complex
 static K
-make_complex_vector(const F* a, const F* b, int n, int step) {
+make_complex_vector(const F* a, const F* b, int n) {
     if (b)
         repeat (i, n)
-            if (!(b[i * step] == 0))
+            if (!(b[i] == 0))
                 goto complex;
 
     if (a) {
         K x = ktn(KF, n);
         repeat (i, n)
-            qF(x, i) = a[i*step];
+            qF(x, i) = a[i];
         return x;
     } else
         return make_F_null(n);
@@ -218,7 +218,7 @@ make_complex_vector(const F* a, const F* b, int n, int step) {
 complex:;
     K x = ktn(0, n);
     repeat (i, n)
-        qK(x, i) = make_complex(a[i * step], b[i * step]);
+        qK(x, i) = make_complex(a[i], b[i]);
     return x;
 }
 
@@ -393,7 +393,7 @@ qml_mevu(K x) {
     free_F(a);
 
     x = ktn(0, 2);
-    qK(x, 0) = make_complex_vector(info ? NULL : lr, info ? NULL : li, n, 1);
+    qK(x, 0) = make_complex_vector(info ? NULL : lr, info ? NULL : li, n);
 
     if (qt(qK(x, 0))) // no complex elements (also when info)
         qK(x, 1) = make_matrix(info ? NULL : ev, n, n, n, make_transposed);
@@ -602,28 +602,9 @@ qml_poly(K x_) {
     I n, info;
     S err = NULL;
 
-    K x = convert_FFF(x_);
+    K x = convert_F(x_);
     if (!x)
         return krr("type");
-    if (qt(x) == -KF) {
-        q0(x);
-        return krr("type");
-    }
-    assert(qt(x) == KF || qt(x) == 0);
-    int complex = qt(x) == 0;
-    if (complex)
-        repeat (i, qn(x)) {
-            K v = qK(x, i);
-            assert(qt(v) == -KF || qt(v) == KF || qt(v) == 0);
-            if (qt(v) == 0) {
-                q0(x);
-                return krr("type");
-            }
-            if (qt(v) == KF && qn(v) != 2) {
-                q0(x);
-                return krr("length");
-            }
-        }
     if (!(n = qnw(x))) {
         q0(x);
         return krr("length");
@@ -632,84 +613,36 @@ qml_poly(K x_) {
         if (!err) err = "limit";
     n--;
 
-    F lca, lcb;
-    if (!complex) {
-        lca = qF(x, 0);
-        lcb = 0;
-    } else if (qt(qK(x, 0)) == -KF) {
-        lca = qf(qK(x, 0));
-        lcb = 0;
-    } else {
-        lca = qF(qK(x, 0), 0);
-        lcb = qF(qK(x, 0), 1);
-    }
-
-    if (lca == 0 && lcb == 0)
+    F lc = qF(x, 0);
+    if (lc == 0)
         if (!err) err = "roots";
 
-    F* l = NULL;
+    F* lr = alloc_F(&n, &err);
+    F* li = alloc_F(&n, &err);
     if (!n)
         goto done;
 
     I lwork_query = -1;
-    F maxwork[2];
-    if (qt(x))
-        dgeev_("N", "N", &n, NULL, &n, NULL, NULL, NULL, &n, NULL, &n,
-               maxwork, &lwork_query,       &info);
-    else
-        zgeev_("N", "N", &n, NULL, &n, NULL, NULL,       &n, NULL, &n,
-               maxwork, &lwork_query, NULL, &info);
+    F maxwork;
+    dgeev_("N", "N", &n, NULL, &n, NULL, NULL, NULL, &n, NULL, &n,
+           &maxwork, &lwork_query, &info);
     check_info(info, &err);
 
-    alloc_W(add_size(0, take_maxwork(info, maxwork[0]), 1+complex));
-    F* rwork = !complex ? NULL : alloc_FF(&n, 2, &err);
-    F* cm = alloc_FF(&n, add_size(0, n, 1+complex), &err);
-    l = alloc_FF(&n, 2, &err);
+    alloc_W(take_maxwork(info, maxwork));
+    F* cm = alloc_FF(&n, n, &err);
 
     /* make companion matrix */
-    if (!complex) {
-        repeat (i, n-1)
-            repeat (j, n)
-                cm[j + n*i] = j == i + 1;
+    repeat (i, n-1)
         repeat (j, n)
-            cm[j + n*(n-1)] = qF(x, n-j) / -lca;
-    } else {
-        repeat (i, n-1)
-            repeat (j, n) {
-                cm[2*j + 2*n*i]     = j == i + 1;
-                cm[2*j + 2*n*i + 1] = 0;
-            }
-        F d = lca*lca + lcb*lcb;
-        if (lcb == 0) {
-            d = lca;
-            lca = 1;
-        }
-        repeat (j, n) {
-            F a, b;
-            K v = qK(x, n-j);
-            if (qt(v) == -KF) {
-                a = qf(v);
-                b = 0;
-            } else {
-                a = qF(v, 0);
-                b = qF(v, 1);
-            }
-            cm[2*j + 2*n*(n-1)]     = (a * lca + b * lcb) / -d;
-            cm[2*j + 2*n*(n-1) + 1] = (b * lca - a * lcb) / -d;
-        }
-    }
+            cm[j + n*i] = j == i + 1;
+    repeat (j, n)
+        cm[j + n*(n-1)] = qF(x, n-j) / -lc;
 
-    if (!complex)
-        dgeev_("N", "N", &n, cm, &n, l, l+n,
-               NULL, &n, NULL, &n, w, &lwork,        &info);
-    else
-        zgeev_("N", "N", &n, cm, &n, l,
-               NULL, &n, NULL, &n, w, &lwork, rwork, &info);
+    dgeev_("N", "N", &n, cm, &n, lr, li, NULL, &n, NULL, &n, w, &lwork, &info);
     check_info(info, &err);
 
     free_W();
     free_F(cm);
-    free_F(rwork);
 
     if (info) {
         if (!err) err = "roots"; // "Failures are rare." - dhseqr.f
@@ -719,8 +652,9 @@ qml_poly(K x_) {
 done:
     q0(x);
 
-    x = make_complex_vector(l, !complex ? l+n : l+1, n, 1+complex);
-    free_F(l);
+    x = make_complex_vector(lr, li, n);
+    free_F(li);
+    free_F(lr);
 
     return check_err(x, err);
 }

@@ -264,17 +264,16 @@ pass:-1;while[2>pass+:1;
     test["lapack_mn_mp_type[.qml.mlsqx`svd;5]";"1b"];
     poly_type:{
         f:@[{.qml.poly x;};;`$];
-        $[x=0;all(::)~'f each(1 0;(1.;0);(1;0.);(1.;0 0.));
-          x=1;all`type~'f each(`;``;(0.;0 0;`;0.);0.;0;(0.;(0.;0 0.)));
-          x=2;all`length~'f each(0#0.;();(0.;());(0.;1#0.);(0.;3#0 0 0.));
-          x=3;all(::)~'f each((1 0;1);(0 1;1));
-          x=4;all`roots~'f each(0 1;(0;1 0);(0 0;1));
+        $[x=0;all(::)~'f each(1 0;(1.;0);(1;0.));
+          x=1;all`type~'f each(`;``;(0.;0 0;`;0.);0.;0;(0.;(0.;0 0.));
+            (1.;0 0.);(1 0;1);(1 0.;0 0.);(0.;());(0.;1#0.);(0.;3#0 0 0.));
+          x=2;all`length~'f each(0#0.;());
+          x=3;all`roots~'f each(0 1;0 0);
           '`]};
     test["poly_type 0";"1b"];
     test["poly_type 1";"1b"];
     test["poly_type 2";"1b"];
     test["poly_type 3";"1b"];
-    test["poly_type 4";"1b"];
     lapack_opt:{
         all`opt~'@[get;;`$]each((.qml.mlsx;`eqiu;0;0);(.qml.mlsqx;`sdv;0;0))};
     test["lapack_opt[]";"1b"];
