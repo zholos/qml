@@ -1,8 +1,8 @@
 --- lapack/make.inc.example
 +++ lapack/make.inc.example
-@@ -12,12 +12,12 @@
- #  selected.  Define LOADER and LOADOPTS to refer to the loader and 
- #  desired load options for your machine.
+@@ -16,12 +16,12 @@
+ #  and handle these quantities appropriately. As a consequence, one 
+ #  should not compile LAPACK with flags such as -ffpe-trap=overflow.
  #
 -FORTRAN  = gfortran 
 -OPTS     = -O2 -frecursive
@@ -16,9 +16,9 @@
 +LOADER   = $(FORTRAN)
 +LOADOPTS = $(OPTS)
  #
- # Timer for the SECOND and DSECND routines
- #
-@@ -42,15 +42,15 @@
+ #  Comment out the following line to include deprecated routines to the
+ #  LAPACK library.
+@@ -51,15 +51,15 @@
  #
  # CC is the C compiler, normally invoked with options CFLAGS.
  #
@@ -38,7 +38,7 @@
  #
  #  Location of the extended-precision BLAS (XBLAS) Fortran library
  #  used for building and testing extended-precision routines.  The
-@@ -69,3 +69,5 @@
+@@ -79,3 +79,5 @@
  LAPACKLIB    = liblapack.a
  TMGLIB       = libtmglib.a
  LAPACKELIB   = liblapacke.a
