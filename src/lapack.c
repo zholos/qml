@@ -307,7 +307,7 @@ qml_mm(K x, K y) {
 
     F* r = alloc_FF(&b_n, a_m, &err);
 
-    if (a_m && b_m && b_n) {
+    if (!err) {
         int i_1 = 1;
         double f_0 = 0, f_1 = 1;
         if (b_n == 1)
@@ -321,7 +321,7 @@ qml_mm(K x, K y) {
 
     free_F(b);
     free_F(a);
-    x = make_matrix(r, a_m, a_m, b_n, b_column);
+    x = make_matrix(err ? NULL : r, a_m, a_m, b_n, b_column);
     free_F(r);
 
     return check_err(x, err);
@@ -348,7 +348,7 @@ qml_ms(K x, K y) {
         if (!(a[(info-1) + (info-1)*a_n] != 0)) // consider NaN
             break; // info > 0 indicates singularity
 
-    if (!info && a_n == b_m) {
+    if (!err && !info) {
         int i_1 = 1;
         double f_1 = 1;
         if (b_n == 1)
