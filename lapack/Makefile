@@ -44,9 +44,10 @@ endif
 do_build:
 ifneq ($(BUILD_BLAS),)
 	$(MAKE) -C work blaslib
+	$(MAKE) -C work blas_testing
 endif
 	$(MAKE) -C work lapacklib
-	$(MAKE) -C work
+	$(MAKE) -C work lapack_testing
 
 
 install_libs:
