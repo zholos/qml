@@ -411,6 +411,12 @@ makeselect "selecting additional compiler options..." "" \
            -pipe ""
 
 
+if [ -z "${KXARCH##w*}" ]; then
+    makeyesno "checking if dlltool works..." \
+              "a working dlltool is required" \
+              dlltool
+fi
+
 CONFTEST=shared
 case $KXARCH in
     m*) set -- "-bundle -undefined dynamic_lookup" ;;

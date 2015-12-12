@@ -10,11 +10,19 @@ define conftest.f/
        end
 endef
 
+# y() is to check that -undefined dynamic_lookup works on OS X, but this needs
+# to be linked against an import library on Windows.
 define conftest.c/shared
 int x;
 int y();
 int f() { return x + y(); }
 int g() { return x + y(); }
+endef
+
+define conftest_def
+NAME conftest.dll
+EXPORTS
+y
 endef
 
 define conftest.c/blas
@@ -53,12 +61,16 @@ endef
 
 export conftest_c = $(conftest.c/$(CONFTEST))
 export conftest_f = $(conftest.f/$(CONFTEST))
+export conftest_def
 
 conftest.c: force
 	echo "$$conftest_c" >$@
 
 conftest.f: force
 	echo "$$conftest_f" >$@
+
+conftest.def: force
+	echo "$$conftest_def" >$@
 
 
 LINK_FLAGS = $(LDFLAGS) $(LIBS_LAPACK) $(LIBS_BLAS) $(LIBS_FORTRAN) -lm
@@ -111,11 +123,17 @@ test/f_compile_c_link: conftest.f conftest.c
 test/xar_version:
 	$(XAR) --version
 
-test/shared_link: conftest.c
+conftest.a: conftest.def
+	$(DLLTOOL) -d $< -l $@
+
+test/dlltool: conftest.a
+	
+test/shared_link: conftest.c $(if $(WINDOWS),conftest.a)
 	echo _f                          >conftest.symlist
 	echo "{ global: f; local: *; };" >conftest.mapfile
 	$(CC) -Werror $(LD_SHARED) -o conftest.$(DLLEXT) $< \
-	    $(FLAGS) $(CFLAGS) $(LINK_FLAGS) $(call ld_export,conftest)
+	    $(FLAGS) $(CFLAGS) $(LINK_FLAGS) $(call ld_export,conftest) \
+	    $(if $(WINDOWS),conftest.a)
 
 test/ld_static: conftest.f conftest.c
 	$(FC) -Werror -c -o conftest.o $< \
