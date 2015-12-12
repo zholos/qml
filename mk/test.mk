@@ -41,6 +41,13 @@ int main() {
 }
 endef
 
+define conftest.c/libm
+double lgamma(double x);
+int main(int argc, char* argv[]) {
+    return lgamma(argc);
+}
+endef
+
 define conftest.f/builtin
        subroutine f(a, b, c, i, j, k)
        character a, b, c
@@ -117,7 +124,7 @@ test/f_compile_c_link: conftest.f conftest.c
 	$(FC) -Werror -c -o conftest.o $< \
 	    $(FLAGS) $(FFLAGS)
 	$(CC) -Werror -o conftest.exe conftest.o conftest.c \
-	    $(FLAGS) $(CFLAGS) $(LINK_FLAGS)
+	    $(FLAGS) $(CFLAGS) $(call ld_static,$(LINK_FLAGS))
 
 
 test/xar_version:
@@ -135,10 +142,9 @@ test/shared_link: conftest.c $(if $(WINDOWS),conftest.a)
 	    $(FLAGS) $(CFLAGS) $(LINK_FLAGS) $(call ld_export,conftest) \
 	    $(if $(WINDOWS),conftest.a)
 
-test/ld_static: conftest.f conftest.c
-	$(FC) -Werror -c -o conftest.o $< \
-	    $(FLAGS) $(FFLAGS)
-	$(CC) -Werror $(LD_SHARED) -o conftest.$(DLLEXT) conftest.o conftest.c \
+# ld_static is for use on $(LIBS_FORTRAN) but find the right flags on -lm
+test/ld_static: conftest.c
+	$(CC) -Werror $(LD_SHARED) -o conftest.$(DLLEXT) $< \
 	    $(FLAGS) $(CFLAGS) $(call ld_static,$(LINK_FLAGS))
 
 test/ld_export: test/shared_link

@@ -455,6 +455,13 @@ makeselect "selecting strip options..." \
            -s "" -S
 
 
+# -fPIC required for this
+# Don't want to depend on MinGW libgfortran.dll, so link statically
+CONFTEST=libm
+makeselect "selecting how to link a specific library statically..." "" \
+           LD_STATIC ld_static \
+           -Wl,-Bstatic ""
+
 CONFTEST=builtin
 # When linking gfortran object files with clang need to explicitly add default
 # gfortran library directories.
@@ -465,17 +472,14 @@ for lib in gfortran gfortranbegin; do
         dirs="$dirs -L$dir"
     fi
 done
+set -- -lgfortran
+for i; do set -- "$@" "-lgfortanbegin $i"; done
+for i; do set -- "$@" "$i -lquadmath"; done
+for i; do set -- "$@" "$dirs $i"; done
 makeselect "selecting additional libraries for Fortran..." \
            "couldn't link C and Fortran code together." \
            LIBS_FORTRAN f_compile_c_link \
-           "" -lgfortran "-lgfortranbegin -lgfortran" \
-           "$dirs -lgfortran" "$dirs -lgfortranbegin -lgfortran"
-
-# -fPIC required for this
-# Don't want to depend on MinGW libgfortran.dll, so link statically
-makeselect "selecting how to link a specific library statically..." "" \
-           LD_STATIC ld_static \
-           -Wl,-Bstatic ""
+           "" "$@"
 
 CONFTEST=stack_local
 makeyesno "checking if Fortran locals are placed on stack..." \
