@@ -99,7 +99,7 @@ else
         echo "$KXARCH (detected from q)"
     else
         case "$(quiet uname -s):$(quiet uname -m)" in
-            MINGW*|CYGWIN*)
+            MINGW*|MSYS*|CYGWIN*)
                 case $PROCESSOR_ARCHITECTURE:$PROCESSOR_ARCHITEW6432 in
                     AMD64:*|*:AMD64) KXARCH=w64 ;;
                     *)               KXARCH=w32 ;;
