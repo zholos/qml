@@ -417,22 +417,22 @@ if [ -z "${KXARCH##w*}" ]; then
               dlltool
 fi
 
+# May compile successfully without -fPIC but then hang when calling back into q,
+# so use -fPIC by default. Sometimes -shared link is impossible without -fPIC.
 CONFTEST=shared
+makeselect "selecting shared library options..." \
+           "couldn't create shared library." \
+           FLAGS_PIC c_compile \
+           -fPIC ""
+
 case $KXARCH in
     m*) set -- "-bundle -undefined dynamic_lookup" ;;
     *) set -- -shared ;;
 esac
-makeselect "selecting how to compile a shared library..." \
+makeselect "selecting how to link a shared library..." \
            "couldn't create a shared library." \
            LD_SHARED shared_link \
            "$@"
-
-# May compile successfully without -fPIC but then hang when calling back into q,
-# so use -fPIC by default.
-makeselect "selecting shared library options..." \
-           "couldn't create shared library." \
-           FLAGS_PIC shared_link \
-           -fPIC ""
 
 if [ -z "${KXARCH##w*}" ]; then
     # Avoid editing PATH to point to MinGW DLLs by linking statically.
