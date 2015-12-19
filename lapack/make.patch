@@ -62,7 +62,7 @@
  
  lapackelib: lapacklib
  	( cd LAPACKE; $(MAKE) )
-@@ -39,10 +39,10 @@
+@@ -39,11 +39,11 @@
  	( cd SRC/VARIANTS ; $(MAKE))
  
  tmglib:
@@ -71,10 +71,12 @@
  
  lapack_testing:	lib
 -	( cd TESTING ; $(MAKE) )
+-	./lapack_testing.py
 +	( cd TESTING ; $(MAKE) double )
- 	./lapack_testing.py
++	if python -c 'import sys;assert sys.version_info[0]==2'; then ./lapack_testing.py; else echo "WARNING: need Python 2 to summarize tests"; fi
  
  variants_testing: lib variants
+ 	( cd TESTING ; rm -f xlintst* ; $(MAKE)  VARLIB='SRC/VARIANTS/LIB/cholrl.a' ; \
 @@ -60,21 +60,12 @@
  	mv stest.out stest_qrll.out ; mv dtest.out dtest_qrll.out ; mv ctest.out ctest_qrll.out ; mv ztest.out ztest_qrll.out )
  	
