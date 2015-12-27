@@ -44,18 +44,22 @@ solvemin(K fun, K con, K start_, I maxiter, F tolcon, I steps,
     // min      callable   empty list        1 type 1
     // conmin   callable   callable or list  1 type 1, n type -1
 
-    if (fun && !callable(fun) || !callable(con) && qt(con) != 0)
-        return krr("type");
-
     if (slp && (rk || steps > 0))
         return krr("opt");
 
-    I ifun, numgr = qt(con) ? 1 : qn(con);
+    I ifun, numgr = qt(con) ? 1 : qnw(con);
     if (fun) { // min or conmin
         numgr = add_size(numgr, 1, 1);
         ifun = 1;
     } else // solve
         ifun = numgr;
+
+    repeat (i, numgr) {
+        K f = fun && !i ? fun : qt(con) ? con : qK(con, i-!!fun);
+        if (!(callable(f) || !qt(f) &&
+                (qn(f) == 2) && callable(qK(f, 0)) && callable(qK(f, 1))))
+            return krr("type");
+    }
 
     K start = convert_FFF(start_);
     if (!start)

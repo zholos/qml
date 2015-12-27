@@ -18,10 +18,10 @@
 +debug_coverage[];
 --- test.q
 +++ test.q
-@@ -17,7 +17,7 @@
- passed:total:2#0;
+@@ -19,7 +19,7 @@
  test:{
      if[not $[count patterns;any x like/:patterns;1b];:(::)];
+     if[verbose;-1"Check ",x," = ",y];
 -    v:@[value;x;`$];
 +    while[.qml.debug_alloc[];v:@[value;x;`$]];
      if[$[8>system"s";0b;pass<>0;0b;reps=0;0b;-11h=type v;0b;

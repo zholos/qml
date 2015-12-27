@@ -1,15 +1,15 @@
 include ../mk/pkg.mk
 
-lapack-3.5.0.tgz.url = $(NETLIB_DIR)/lapack/lapack-3.5.0.tgz
-lapack-3.5.0.tgz.sha256 = \
-    9ad8f0d3f3fb5521db49f2dd716463b8fb2b6bc9dc386a9956b8c6144f726352
+lapack-3.6.0.tgz.url = $(NETLIB_DIR)/lapack/lapack-3.6.0.tgz
+lapack-3.6.0.tgz.sha256 = \
+    a9a0082c918fe14e377bbd570057616768dca76cbdc713457d8199aaa233ffc3
 
 # BUILD_BLAS sets BUILD_LAPACK too
 ifneq ($(BUILD_LAPACK),)
 
-do_extract: ../download/lapack-3.5.0.tgz
+do_extract: ../download/lapack-3.6.0.tgz
 	tar xzf $<
-	ln -sf lapack-3.5.0 work
+	ln -sf lapack-3.6.0 work
 
 
 do_patch: make.patch
@@ -44,9 +44,10 @@ endif
 do_build:
 ifneq ($(BUILD_BLAS),)
 	$(MAKE) -C work blaslib
+	$(MAKE) -C work blas_testing
 endif
 	$(MAKE) -C work lapacklib
-	$(MAKE) -C work
+	$(MAKE) -C work lapack_testing
 
 
 install_libs:

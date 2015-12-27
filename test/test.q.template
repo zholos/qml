@@ -1,6 +1,7 @@
 if[any"-cd"~/:.z.x;
     .qml.dll:` sv hsym[`$system"cd"],`qml]; / full path stops Windows searching
 stop:any"-stop"~/:.z.x;
+verbose:any"-verbose"~/:.z.x;
 patterns:.z.x 1+where"-like"~/:.z.x;
 
 \l qml.q
@@ -17,6 +18,7 @@ mttests:enlist[`]!enlist();
 passed:total:2#0;
 test:{
     if[not $[count patterns;any x like/:patterns;1b];:(::)];
+    if[verbose;-1"Check ",x," = ",y];
     v:@[value;x;`$];
     if[$[8>system"s";0b;pass<>0;0b;reps=0;0b;-11h=type v;0b;
             (-11h=type p 0) and 0h=type p:parse x;1b;'`run];
@@ -197,9 +199,10 @@ pass:-1;while[2>pass+:1;
         f:.[{x[y;z];}x;;`$];
         $[y=0;all(::)~'f each(((0 0;0 0.);0 0);(((0 0;0 0.);(0 0 0.;0 0 0))));
           y=1;all`type~'f each(``;(`;0 0);((0 0;0 0.);`);
-            ((0 0;0 0.);enlist 0#0));
+            ((0 0;0 0.);enlist 0#0);(();0#0));
           y=2;all`length~'f each(((0 0.;0 0 0.);0 0);((0 0;0 0.);(0 0;0 0 0.)));
-          y=3;all`length~'f each(((0 0;0 0.);0 0 0);((0 0;0 0.);(0 0;0 0;0 0)));
+          y=3;all`length~'f each(((0 0;0 0.);0 0 0);((0 0;0 0.);(0 0;0 0;0 0));
+            ((0 0 0;0 0 0.);(0 0;0 0)));
           / not for .qml.mm:
           y=4;`length~f((0 0 0;0 0 0);0 0 0);
           '`]};
@@ -261,17 +264,16 @@ pass:-1;while[2>pass+:1;
     test["lapack_mn_mp_type[.qml.mlsqx`svd;5]";"1b"];
     poly_type:{
         f:@[{.qml.poly x;};;`$];
-        $[x=0;all(::)~'f each(1 0;(1.;0);(1;0.);(1.;0 0.));
-          x=1;all`type~'f each(`;``;(0.;0 0;`;0.);0.;0;(0.;(0.;0 0.)));
-          x=2;all`length~'f each(0#0.;();(0.;());(0.;1#0.);(0.;3#0 0 0.));
-          x=3;all(::)~'f each((1 0;1);(0 1;1));
-          x=4;all`roots~'f each(0 1;(0;1 0);(0 0;1));
+        $[x=0;all(::)~'f each(1 0;(1.;0);(1;0.));
+          x=1;all`type~'f each(`;``;(0.;0 0;`;0.);0.;0;(0.;(0.;0 0.));
+            (1.;0 0.);(1 0;1);(1 0.;0 0.);(0.;());(0.;1#0.);(0.;3#0 0 0.));
+          x=2;all`length~'f each(0#0.;());
+          x=3;all`roots~'f each(0 1;0 0);
           '`]};
     test["poly_type 0";"1b"];
     test["poly_type 1";"1b"];
     test["poly_type 2";"1b"];
     test["poly_type 3";"1b"];
-    test["poly_type 4";"1b"];
     lapack_opt:{
         all`opt~'@[get;;`$]each((.qml.mlsx;`eqiu;0;0);(.qml.mlsqx;`sdv;0;0))};
     test["lapack_opt[]";"1b"];

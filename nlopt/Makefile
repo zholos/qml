@@ -22,6 +22,7 @@ do_patch:
 	cp timer.c nlopt/util/
 	cp nlopt/util/nlopt-util.h work/
 	patch -p0 -d work <nlopt-util.patch
+	$(SEDI) 's/i\(\*:MSYS\)/\1/' nlopt/config.guess
 
 # Explicit is better than implicit. Only build the object files we need.
 # All are MIT-licensed.

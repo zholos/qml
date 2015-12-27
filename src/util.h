@@ -94,12 +94,12 @@ K convert_F(K x);
 K convert_FF(K x);
 K convert_FFF(K x);
 
-int item_I(I* r, K x, I i);
-int item_F(F* r, K x, I i);
+int item_I(I* r, K x, L i);
+int item_F(F* r, K x, L i);
 
 
-K make_F_null(I n);
-K make_F(const F* a, I n);
+K make_F_null(L n);
+K make_F(const F* a, L n);
 
 
 K new_D();

@@ -1,3 +1,11 @@
+Version 0.6 on 2015-12-27:
+  * Support compiling on OS X.
+  * Analytic gradient functions can be specified in 'min', 'conmin' and 'solve'.
+  * Removed input of complex coefficients to 'poly' to reduce build time and
+    binary size. Complex roots are still returned.
+  * Fixed crash in 'conmin' with `cobyla and empty params (e.g.,
+     .qml.conminx[`cobyla;{};();()]).
+
 Version 0.5.5 on 2015-06-21:
   * Fixed 'mpinv' increasing numerical rank of matrix (e.g.,
     .qml.mrank[.qml.mpinv(1 2;3 6)]<>1).

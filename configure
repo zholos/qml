@@ -44,7 +44,8 @@ USAGE
 unset CONFTEST KXARCH KXVER QHOME_CONFIG CC FC CFLAGS CFLAGS_FLOAT
 unset FFLAGS FFLAGS_FLOAT FFLAGS_THREAD
 unset FLAGS FLAGS_BITS FLAGS_WINDOWS FLAGS_PIC FLAGS_PIPE
-unset TOOLPREFIX XCC CONFIG LDFLAGS LDFLAGS_LIBGCC LD_EXPORT LD_STATIC
+unset TOOLPREFIX XCC CONFIG
+unset LDFLAGS LDFLAGS_LIBGCC LD_EXPORT LD_STATIC LD_SHARED STRIP_FLAGS
 unset LIBS_FORTRAN LIBS_BLAS LIBS_LAPACK
 unset FETCH SHA256
 unset BUILD_BLAS BUILD_ATLAS WITH_BLAS WITH_LAPACK
@@ -98,7 +99,7 @@ else
         echo "$KXARCH (detected from q)"
     else
         case "$(quiet uname -s):$(quiet uname -m)" in
-            MINGW*|CYGWIN*)
+            MINGW*|MSYS*|CYGWIN*)
                 case $PROCESSOR_ARCHITECTURE:$PROCESSOR_ARCHITEW6432 in
                     AMD64:*|*:AMD64) KXARCH=w64 ;;
                     *)               KXARCH=w32 ;;
@@ -216,6 +217,8 @@ makeenv () {
         LDFLAGS="$LDFLAGS $LDFLAGS_LIBGCC" \
         LD_EXPORT="$LD_EXPORT" \
         LD_STATIC="$LD_STATIC" \
+        LD_SHARED="$LD_SHARED" \
+        STRIP_FLAGS="$STRIP_FLAGS" \
         LIBS_FORTRAN="$LIBS_FORTRAN" \
         LIBS_BLAS="$LIBS_BLAS" \
         LIBS_LAPACK="$LIBS_LAPACK" \
@@ -408,13 +411,28 @@ makeselect "selecting additional compiler options..." "" \
            -pipe ""
 
 
+if [ -z "${KXARCH##w*}" ]; then
+    makeyesno "checking if dlltool works..." \
+              "a working dlltool is required" \
+              dlltool
+fi
+
 # May compile successfully without -fPIC but then hang when calling back into q,
-# so use -fPIC by default.
+# so use -fPIC by default. Sometimes -shared link is impossible without -fPIC.
 CONFTEST=shared
 makeselect "selecting shared library options..." \
            "couldn't create shared library." \
-           FLAGS_PIC shared_link \
+           FLAGS_PIC c_compile \
            -fPIC ""
+
+case $KXARCH in
+    m*) set -- "-bundle -undefined dynamic_lookup" ;;
+    *) set -- -shared ;;
+esac
+makeselect "selecting how to link a shared library..." \
+           "couldn't create a shared library." \
+           LD_SHARED shared_link \
+           "$@"
 
 if [ -z "${KXARCH##w*}" ]; then
     # Avoid editing PATH to point to MinGW DLLs by linking statically.
@@ -431,18 +449,37 @@ makeselect "selecting how to export specific symbols..." \
            LD_EXPORT ld_export \
            -Wl,--version-script -Wl,-M -exported_symbols_list
 
+makeselect "selecting strip options..." \
+           "couldn't strip shared library." \
+           STRIP_FLAGS strip \
+           -s "" -S
 
-CONFTEST=builtin
-makeselect "selecting additional libraries for Fortran..." \
-           "couldn't link C and Fortran code together." \
-           LIBS_FORTRAN f_compile_c_link \
-           "" -lgfortran "-lgfortranbegin -lgfortran"
 
 # -fPIC required for this
 # Don't want to depend on MinGW libgfortran.dll, so link statically
+CONFTEST=libm
 makeselect "selecting how to link a specific library statically..." "" \
            LD_STATIC ld_static \
            -Wl,-Bstatic ""
+
+CONFTEST=builtin
+# When linking gfortran object files with clang need to explicitly add default
+# gfortran library directories.
+dirs=
+for lib in gfortran gfortranbegin; do
+    dir=`dirname "$(quiet "$FC" $FLAGS_BITS -print-file-name=lib${lib}.a)"`
+    if [ -n "${dir%.}" ]; then
+        dirs="$dirs -L$dir"
+    fi
+done
+set -- -lgfortran
+for i; do set -- "$@" "-lgfortanbegin $i"; done
+for i; do set -- "$@" "$i -lquadmath"; done
+for i; do set -- "$@" "$dirs $i"; done
+makeselect "selecting additional libraries for Fortran..." \
+           "couldn't link C and Fortran code together." \
+           LIBS_FORTRAN f_compile_c_link \
+           "" "$@"
 
 CONFTEST=stack_local
 makeyesno "checking if Fortran locals are placed on stack..." \
@@ -503,7 +540,7 @@ echo "just kidding"
 makeselect "looking for sha256 program..." \
            "sha256 program is required." \
            SHA256 sha256 \
-           sha256 sha256sum openssl
+           sha256 sha256sum shasum openssl
 
 
 
@@ -529,6 +566,8 @@ CONFIG         := $CONFIG
 LDFLAGS        := $LDFLAGS $LDFLAGS_LIBGCC
 LD_EXPORT      := $LD_EXPORT
 LD_STATIC      := $LD_STATIC
+LD_SHARED      := $LD_SHARED
+STRIP_FLAGS    := $STRIP_FLAGS
 LIBS_FORTRAN   := $LIBS_FORTRAN
 LIBS_BLAS      := $LIBS_BLAS
 BUILD_BLAS     := $BUILD_BLAS

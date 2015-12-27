@@ -253,10 +253,7 @@ poly_subjects = [
     [5, 0, 0, 0, 0, 1],
     [10, 0, 0, 0, 75, 420],
     (lambda n: [sp.binomial(n, i) for i in range(n+1)])(2),
-    list(random_matrix(25, 1)),
-    [1, -1, 1+I],
-    [sp.sqrt(-2), sp.sqrt(2)-sp.sqrt(-2),2+I,-3*I],
-    list(random_matrix(25, 2)*Matrix([1, I]))
+    list(random_matrix(25, 1))
 ]
 
 def test_poly():

@@ -6,8 +6,8 @@
 // x is scalar or vector, call is an expression of v, result is returned
 #define wrap_call(x, call)                 \
     do {                                   \
-        if (likely((x)->t == -KF)) {       \
-            F v = (x)->f;                  \
+        if (likely(qt(x) == -KF)) {        \
+            F v = qf(x);                   \
             return kf((call));             \
         }                                  \
         wrap_call_vector(x, call);         \
@@ -23,10 +23,10 @@
     do {                                   \
         K wc__x = convert_F((x));          \
         if (wc__x) {                       \
-            K wc__r = ktn(KF, wc__x->n);   \
-            repeat (wc__i, wc__x->n) {     \
-                F v = kF(wc__x)[wc__i];    \
-                kF(wc__r)[wc__i] = (call); \
+            K wc__r = ktn(KF, qn(wc__x));  \
+            repeat (wc__i, qn(wc__x)) {    \
+                F v = qF(wc__x, wc__i);    \
+                qF(wc__r, wc__i) = (call); \
             }                              \
             q0(wc__x);                     \
             return wc__r;                  \
@@ -45,28 +45,28 @@ qml_##name(K x) {          \
 
 
 // (atom/vector F, atom/vector F)
-#define wrap_FF(name, func)                 \
-K                                           \
-qml_##name(K x, K y) {                      \
-    if (likely(xt == -KF && y->t == -KF))   \
-        return kf(func(xf, y->f));          \
-    if (compatible_f(x)) {                  \
-        F u = convert_f(x);                 \
-        wrap_call(y, func(u, v));           \
-    }                                       \
-    if (compatible_f(y)) {                  \
-        F u = convert_f(y);                 \
-        assert(!compatible_f(x));           \
-        wrap_call_vector(x, func(v, u));    \
-    }                                       \
-    check_type(x = convert_F(x),);          \
-    check_type(y = convert_F(y), q0(x));    \
-    check_length(xn == y->n, q0(y); q0(x)); \
-    K r = ktn(KF, xn);                      \
-    repeat (i, xn)                          \
-        kF(r)[i] = func(xF[i], kF(y)[i]);   \
-    q0(y); q0(x);                           \
-    return r;                               \
+#define wrap_FF(name, func)                     \
+K                                               \
+qml_##name(K x, K y) {                          \
+    if (likely(qt(x) == -KF && qt(y) == -KF))   \
+        return kf(func(qf(x), qf(y)));          \
+    if (compatible_f(x)) {                      \
+        F u = convert_f(x);                     \
+        wrap_call(y, func(u, v));               \
+    }                                           \
+    if (compatible_f(y)) {                      \
+        F u = convert_f(y);                     \
+        assert(!compatible_f(x));               \
+        wrap_call_vector(x, func(v, u));        \
+    }                                           \
+    check_type(x = convert_F(x),);              \
+    check_type(y = convert_F(y), q0(x));        \
+    check_length(qn(x) == qn(y), q0(y); q0(x)); \
+    K r = ktn(KF, qn(x));                       \
+    repeat (i, qn(x))                           \
+        qF(r, i) = func(qF(x, i), qF(y, i));    \
+    q0(y); q0(x);                               \
+    return r;                                   \
 }
 
 #define wrap_FF_(func) wrap_FF(func, func)
