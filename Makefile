@@ -25,3 +25,5 @@ test: build $(addsuffix _test,$(BUILDS))
 clean: $(addsuffix _clean,$(PACKAGES) $(BUILDS) $(OTHERS))
 	rm -rf -- include/ lib/
 	$(MAKE) -f mk/test.mk clean
+
+include mk/maint.mk # targets for use by maintainer are in this file
