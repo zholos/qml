@@ -2,7 +2,7 @@ all:
 
 force:
 
-.PHONY: all force build install uninstall test clean
+.PHONY: all force build install uninstall test bench clean
 
 LD      = $(TOOLPREFIX)ld
 AR      = $(TOOLPREFIX)ar

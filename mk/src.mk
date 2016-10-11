@@ -55,8 +55,14 @@ uninstall:
 	rm -f -- '$(QHOME)'/qml.q
 endif
 
+# can override on make command-line
+TEST_OPTS=
 test: build
-	q test.q -cd -s 16 </dev/null
+	q test.q -cd -s 16 $(TEST_OPTS) </dev/null
+
+BENCH_OPTS=
+bench: build
+	q bench.q -cd $(BENCH_OPTS) </dev/null
 
 .PHONY: clean_src clean_misc
 clean_src:
