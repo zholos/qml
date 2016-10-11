@@ -41,10 +41,10 @@ pass:-1;while[2>pass+:1;
     test[".qml.eps+1";"1"];
     test[".qml.eps>0";"1"];
     reps:10000;
----LIBM---
----MATRIX---
----MPMAT---
----CONMAX---
+---libm---
+---matrix---
+---mpmat---
+---conmax---
     const_cov:{
         `type`domain~@'[{.qml.const x};0h,-1;`$]};
     test["const_cov[]";"1b"];
