@@ -54,7 +54,7 @@
 +	( cd BLAS/SRC; $(MAKE) double )
  
  cblaslib:
- 	( cd CBLAS/src; $(MAKE) )
+ 	( cd CBLAS; $(MAKE) )
  
  lapacklib:	lapack_install
 -	( cd SRC; $(MAKE) )
