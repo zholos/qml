@@ -81,5 +81,8 @@ bench1[".qml.mlsqx[`svd;A {};B {}]";n];
 bench1[".qml.mlsqx[`svd;A {};b {}]";n];
 bench2[".qml.mlsqx[`svd;A_ {};B_ {}]";reverse'[ml];mr];
 bench2[".qml.mlsqx[`svd;A_ {};b_ {}]";reverse'[ml];mr[;0]];
+bench1[".qml.mnoopx[`square;A {}]";n];
+bench1[".qml.mnoopx[`square`triangular;A {}]";n];
+bench1[".qml.mnoop A_ {}";ml];
 
 \\

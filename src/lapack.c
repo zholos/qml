@@ -803,3 +803,52 @@ K
 qml_mlsq(K x, K y) {
     return mlsq(x, y, 0);
 }
+
+
+// undocumented no-op function to benchmark matrix format conversion
+static K
+mnoop(K x, int square, int triangular_) {
+    int triangular = 0;
+    int column = 0;
+    I m, n;
+    S err = NULL;
+    F* a;
+    if (square) {
+        a = take_square_matrix(
+            x, &n, triangular_ ? &triangular : NULL, &err);
+        m = n;
+    } else
+        a = take_matrix(x, &m, &m, &n, &column, &err);
+
+    x = make_matrix(a, m, m, n, column);
+    free_F(a);
+    if (triangular_) {
+        K d = new_D();
+        append_D(d, "x", x);
+        append_D(d, "triangular", ks(triangular > 0 ? "upper" :
+                                     triangular < 0 ? "lower" : ""));
+        x = d;
+    }
+    return check_err(x, err);
+}
+
+static const struct optn noop_opt[] = {
+    [0] = { "square", 0 },
+    [1] = { "triangular", 0 },
+          { NULL }
+};
+
+K
+qml_mnoopx(K opts, K x) {
+    union optv v[] = { { 0 }, { 0 } };
+    if (!take_opt(opts, noop_opt, v))
+        return krr("opt");
+    if (!v[0].i && v[1].i)
+        return krr("opt");
+    return mnoop(x, v[0].i, v[1].i);
+}
+
+K
+qml_mnoop(K x) {
+    return mnoop(x, 0, 0);
+}

@@ -9,10 +9,10 @@ dll:`qml^dll^:`; / optional override
         `sin`cos`tan`asin`acos`atan`sinh`cosh`tanh`asinh`acosh`atanh,`exp`expm1,
             `log`log10`logb`log1p`sqrt`cbrt`floor`ceil`fabs`erf`erfc,
             `lgamma`gamma`j0`j1`y0`y1`ncdf`nicdf`kcdf`kicdf,
-            `mdet`minv`mevu`mchol`mqr`mqrp`mlup`msvd`poly`const;
+            `mdet`minv`mevu`mchol`mqr`mqrp`mlup`msvd`mnoop`poly`const;
         `atan2`pow`hypot`fmod`beta`pgammar`pgammarc`ipgammarc`c2cdf`c2icdf,
             `stcdf`sticdf`pscdf`psicdf`smcdf`smicdf`mm`ms`mls`mlsq,
-            `solve`min`root;
+            `solve`min`root`mnoopx;
         `pbetar`ipbetar`fcdf`ficdf`gcdf`gicdf`bncdf`bnicdf`mlsx`mlsqx,
             `solvex`minx`rootx`conmin`line;
         `conminx`linex);

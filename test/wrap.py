@@ -338,6 +338,8 @@ def test_lapack_opt():
 
     emit("mlsx", "`eqiu", "0", "0")
     emit("mlsqx", "`sdv", "0", "0")
+    emit("mnoopx", "`lwer", "0")
+    emit("mnoopx", "`lower`upper", "0")
 
 def test_poly():
     output("""\

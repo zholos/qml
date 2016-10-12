@@ -471,6 +471,24 @@ def test_mkron():
     test[".qml.mkron[(1 2;-3 4);-1 2]";"(-1 -2;2 4;3 -4;-6 8)"];
     test[".qml.mkron[(0 1 0;-2.5 0 3);(1 2;-3 4)]";"(0 0 1 2 0 0;0 0 -3 4 0 0;-2.5 -5 0 0 3 6;7.5 -10 0 0 -9 12)"];""")
 
+def test_mnoop():
+    output("""\
+    mnoopx_triangular:{(::;``lower`upper?)@'
+        .qml.mnoopx[`square`triangular;x]`x`triangular};""")
+    lower = True
+    for A in subjects:
+        test("mnoop", A, A)
+        if A.m == 1:
+            test("mnoop", A.column(0), A.column(0))
+        if A.m == A.n:
+            test("mnoopx[`square", A, A)
+            if A.take_lower() != A != A.take_upper():
+                test("mnoopx_triangular", A, (A, 0))
+            L = A.take_lower() if lower else A.take_upper()
+            if L != A:
+                test("mnoopx_triangular", L, (L, 2-lower))
+            lower = not lower
+
 
 def tests():
     reps(10000)
@@ -489,6 +507,7 @@ def tests():
     test_mlsq(False)
     test_mlsq(True)
     test_mkron()
+    test_mnoop()
 
 
 if __name__ == "__main__":
