@@ -19,12 +19,14 @@ build: qml.$(DLLEXT)
 	    $(DEFINES) \
 	    -I../include -c -o $@ $<
 
+# Don't use -L../lib -lprob etc. to avoid unintentionally linking to possibly
+# incompatible system libraries if the libraries we built are missing.
 qml.$(DLLEXT): $(OBJS) qml.symlist qml.mapfile
 	$(CC) $(FLAGS) $(LD_SHARED) -o $@ $(OBJS) \
-	    -L../lib -lprob -lconmax -lnlopt \
+	    ../lib/libprob.a ../lib/libconmax.a ../lib/libnlopt.a \
 	    $(LDFLAGS) \
-	    $(if $(BUILD_LAPACK),-llapack,$(LIBS_LAPACK)) \
-	    $(if $(BUILD_BLAS),-lrefblas,$(LIBS_BLAS)) \
+	    $(if $(BUILD_LAPACK),../lib/liblapack.a,$(LIBS_LAPACK)) \
+	    $(if $(BUILD_BLAS),../lib/librefblas.a,$(LIBS_BLAS)) \
 	    $(call ld_static,$(LIBS_FORTRAN)) \
 	    -lm \
 	    $(if $(WINDOWS),-lq) \
