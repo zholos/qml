@@ -56,6 +56,7 @@ endif
 test: build
 	q test.q -cd -s 16 </dev/null
 
+.PHONY: clean_src clean_misc
 clean_src:
 clean_misc:
 clean: clean_src clean_misc

@@ -52,3 +52,5 @@ do_install:
 clean: do_clean
 	rm -f .extracted .patched .configured .built .installed
 do_clean:
+
+.PHONY: $(foreach t,extract patch configure build install clean,$(t) do_$(t))

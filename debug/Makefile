@@ -15,6 +15,7 @@ DEFINES += -DDEBUG
 	patch -p0 <$<
 	touch $@
 
+.PHONY: valgrind
 valgrind: all
 	valgrind --suppressions=q.supp --leak-check=full --show-reachable=yes \
 	    --track-origins=yes --trace-children=yes q test.q -cd </dev/null

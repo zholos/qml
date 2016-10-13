@@ -4,9 +4,12 @@ PACKAGES := cephes lapack conmax nlopt q
 BUILDS := src debug
 OTHERS := coverage
 
-$(foreach dir,$(PACKAGES) $(BUILDS) $(OTHERS),\
-    $(foreach target,build install uninstall test clean,$(eval \
-        $(dir)_$(target): ; make -C $(dir) $(target))))
+$(foreach dir,$(PACKAGES) $(BUILDS) $(OTHERS), \
+    $(eval .PHONY: $(dir)) \
+    $(eval $(dir): ; make -C $(dir)) \
+    $(foreach target,build install uninstall test bench clean, \
+        $(eval .PHONY: $(dir)_$(target)) \
+        $(eval $(dir)_$(target): ; make -C $(dir) $(target))))
 
 all: build
 
