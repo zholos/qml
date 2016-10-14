@@ -82,6 +82,8 @@ static int alloc_square_; // flag for passing instead of b_column
 #define alloc_square (&alloc_square_)
 
 // ldr = m is allowed, otherwise *ldr must be set on input
+// on error a = NULL and ldr = m = n = 0; the latter protects from functions
+// here and in LAPACK (e.g. dgeqrf) accessing a based on one of m and n != 0
 static F*
 take_matrix(K x_, I* ldr, I* m, I* n, int* column, S* err) {
     if (column && column != alloc_square) {
@@ -91,7 +93,7 @@ take_matrix(K x_, I* ldr, I* m, I* n, int* column, S* err) {
             *ldr = max_i(*ldr, *m); // if ldr == m, *ldr is set above
             F* a = alloc_F(ldr, err);
             if (!*ldr)
-                *m = 0;
+                *m = *n = 0;
             copy_F(a, 0, qrF(x, *m), 0, *m);
             q0(x);
             *column = 1;
@@ -474,13 +476,13 @@ mqr(K x, const int pivot) {
     alloc_W(max_i(lwork_ge, lwork_or));
     F* tau = alloc_F(&min, &err);
     if (!min)
-        n = 0;
+        m = n = 0;
 
     K p;
     if (pivot) {
         I* ipiv = alloc_I(&n, &err);
         if (!n)
-            min = 0;
+            min = m = 0;
 
         repeati (i, n)
             ipiv[i] = 0;
@@ -534,7 +536,7 @@ qml_mlup(K x) {
     I min = min_i(m, n);
     I* ipiv = alloc_I(&min, &err);
     if (!min)
-        n = 0;
+        m = n = 0;
 
     dgetrf_(&m, &n, a, &m, ipiv, &info);
     check_info(info, &err);
@@ -577,7 +579,7 @@ qml_msvd(K x) {
     I* iw = alloc_II(&min, 8, &err);
 
     if (!min)
-        m = 0;
+        m = n = 0;
 
     dgesdd_("A", &m, &n, a, &m, s, u, &m, vt, &n, w, &lwork, iw, &info);
     check_info(info, &err);
@@ -772,7 +774,7 @@ mlsq(K x, K y, int svd) {
         I min = min_i(a_m, a_n);
         F* s = alloc_F(&min, &err);
         if (!min)
-            a_n = 0;
+            a_m = a_n = 0;
         I* iw = alloc_I(&liwork, &err);
 
         // can't convey failed alloc of iw (liwork=0), so simply skip the call
