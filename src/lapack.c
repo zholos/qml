@@ -43,61 +43,20 @@ take_maxwork(I info, F maxwork) {
     free_F(w__full)
 
 
-static F*
-take_square_matrix(K x_, I* n, int* triangular, S* err) {
-    K x = convert_FF(x_);
-    if (!likely(x && (*n = qnw(x)))) {
-        *n = 0;
-        if (!*err) *err = "type";
-    }
-
-    F* a = alloc_FF(n, *n, err);
-    repeati (j, *n)
-        if (qn(qK(x, j)) != *n) {
-            *n = 0;
-            if (!*err) *err = "length";
-        }
-
-    if (triangular) {
-        int upper = 1, lower = 1;
-        repeati (i, *n)
-            repeati (j, *n)
-                if ((a[j + i * *n] = qF(qK(x, j), i)))
-                    if (i < j) // non-zero below diagonal, so not upper
-                        upper = 0;
-                    else if (i > j) // non-zero above diagonal, so not lower
-                        lower = 0;
-        *triangular = upper ? 1 : lower ? -1 : 0;
-    } else
-        repeati (i, *n)
-            repeati (j, *n)
-                a[j + i * *n] = qF(qK(x, j), i);
-
-    if (x) q0(x);
-    return a;
-}
-
-
-static int alloc_square_; // flag for passing instead of b_column
-#define alloc_square (&alloc_square_)
-
-// ldr = m is allowed, otherwise *ldr must be set on input
-// on error a = NULL and ldr = m = n = 0; the latter protects from functions
-// here and in LAPACK (e.g. dgeqrf) accessing a based on one of m and n != 0
-static F*
-take_matrix(K x_, I* ldr, I* m, I* n, int* column, S* err) {
-    if (column && column != alloc_square) {
+// check if x is a q matrix, return number of rows (m) and columns (n)
+// returned x must be passed to copy_matrix or released with if (x) q0(x);
+// if check fails, err is set and m=0 - so copy_matrix() may still be called
+// if column is set, accepts vector as m*1 matrix
+static K
+check_matrix(K x_, I* m, I* n, int* column, S* err) {
+    if (column) {
         K x = convert_F(x_);
         if (x) {
-            *m = qnw(x), *n = 1;
-            *ldr = max_i(*ldr, *m); // if ldr == m, *ldr is set above
-            F* a = alloc_F(ldr, err);
-            if (!*ldr)
-                *m = *n = 0;
-            copy_F(a, 0, qrF(x, *m), 0, *m);
-            q0(x);
+            *n = 1;
+            if (!likely(*m = qnw(x)))
+                if (!*err) *err = "type";
             *column = 1;
-            return a;
+            return x;
         }
         *column = 0;
     }
@@ -112,17 +71,71 @@ take_matrix(K x_, I* ldr, I* m, I* n, int* column, S* err) {
             *m = *n = 0;
             if (!*err) *err = "length";
         }
-    *ldr = max_i(*ldr, *m); // if ldr == m, *ldr is set above
+    return x;
+}
 
-    I nm = column == alloc_square ? max_i(*m, *n) : *n;
-    F* a = alloc_FF(&nm, *ldr, err);
-    if (!nm)
-        *m = *n = 0;
-    // favoring sequential writes over sequential reads seems to be faster
-    repeati (i, *n)
-        repeati (j, *m)
-            a[j + i * *ldr] = qF(qK(x, j), i);
+// copy data from output of check_matrix into pre-allocated array
+static void
+copy_matrix(K x, F* a, I lda, I m, I n, int column)
+{
+    assert(a || !m || !n);
+    if (column && x) {
+        assert(n <= 1);
+        copy_F(a, 0, qrF(x, m), 0, m);
+    } else
+        repeati (i, n)
+            repeati (j, m)
+                a[j + i*lda] = qF(qK(x, j), i);
     if (x) q0(x);
+}
+
+
+// if triangular is set, returns 1 if matrix is upper, -1 if lower, else 0
+static F*
+take_square_matrix(K x, I* n, int* triangular, S* err) {
+    I m;
+    x = check_matrix(x, &m, n, NULL, err);
+    if (!likely(m == *n)) {
+        *n = 0;
+        if (!*err) *err = "length";
+    }
+    // don't use m past here
+
+    F* a = alloc_FF(n, *n, err);
+
+    if (triangular) {
+        int upper = 1, lower = 1;
+        repeati (i, *n)
+            repeati (j, *n)
+                if ((a[j + i * *n] = qF(qK(x, j), i)))
+                    if (i < j) // non-zero below diagonal, so not upper
+                        upper = 0;
+                    else if (i > j) // non-zero above diagonal, so not lower
+                        lower = 0;
+        *triangular = upper ? 1 : lower ? -1 : 0;
+        if (x) q0(x);
+    } else
+        copy_matrix(x, a, *n, *n, *n, 0);
+
+    return a;
+}
+
+
+static int alloc_square_; // flag for passing instead of b_column
+#define alloc_square (&alloc_square_)
+
+// ldr = m is allowed, otherwise *ldr must be set on input
+// on error a = NULL and ldr = m = n = 0; the latter protects from functions
+// here and in LAPACK (e.g. dgeqrf) accessing a based on one of m and n != 0
+static F*
+take_matrix(K x, I* ldr, I* m, I* n, int* column, S* err) {
+    x = check_matrix(x, m, n, column == alloc_square ? NULL : column, err);
+    *ldr = max_i(*ldr, *m); // if ldr == m, *ldr is set above
+    I nm = column == alloc_square ? max_i(*m, *n) : *n;
+    F* a = alloc_FF(&nm, *ldr, err); // works for vector too (*n==1)
+    if (!nm)
+        *ldr = *m = *n = 0;
+    copy_matrix(x, a, *ldr, *m, *n, column && *column);
     return a;
 }
 

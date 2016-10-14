@@ -113,18 +113,10 @@ def test_lapack_type():
         "(0.;0 0.)",
         "(0.;0 0)",
         "(0 0.;0.)",
-        "(0 0;0.)"
-    ]
-
-    # 'type as general matrix but 'length as column argument
-    type_mn_length_m = [
+        "(0 0;0.)",
         "()",
         "0#0",
-        "0#0."
-    ]
-
-    # 'type as general matrix but 'length as square matrix
-    type_mn_length_nn = [
+        "0#0.",
         "enlist ()",
         "enlist 0#0",
         "enlist 0#0."
@@ -144,16 +136,16 @@ def test_lapack_type():
     for func in "mdet minv mev mchol".split():
         (scalar if func=="mdet" else matrix)("(0 0;0 0.)")
         (scalar if func=="mdet" else matrix)("(0 0.;0 0)")
-        for arg in type_mn + type_mn_length_m:
+        for arg in type_mn:
             type_error(arg)
         type_error("0 0.")
         length_error("enlist 0 0.")
-        for arg in type_mn_length_nn + length_mn:
+        for arg in length_mn:
             length_error(arg)
 
     # f(m*n)
     for func in "mqr mqrp mlup msvd".split():
-        for arg in type_mn + type_mn_length_m + type_mn_length_nn:
+        for arg in type_mn:
             type_error(arg)
         type_error("0 0.")
         matrix("(0 0 0;0 0 0.)")
@@ -161,21 +153,21 @@ def test_lapack_type():
         for arg in length_mn:
             length_error(arg)
 
-    def type_mn_pq(left, right, left_nn=False):
+    def type_mn_pq(left, right):
         # left and right should be valid
         type_error("`", "`") # both wrong type
-        for arg in type_mn + type_mn_length_m + type_mn_length_nn*(not left_nn):
+        for arg in type_mn:
             type_error(arg, right) # various left 'type
         type_error("0 0.", right) # left can't be vector
-        for arg in type_mn + type_mn_length_nn:
+        for arg in type_mn:
             type_error(left, arg) # various right 'type
         type_error("()", "0#0") # both 'type
 
-    def length_mn_pq(left, right, left_nn=False):
+    def length_mn_pq(left, right):
         # left and right should be valid and match other argument of size 2
-        for arg in type_mn_length_nn*left_nn + length_mn:
+        for arg in length_mn:
             length_error(arg, right)
-        for arg in type_mn_length_m + length_mn:
+        for arg in length_mn:
             length_error(left, arg)
 
     # f(m*n, n*p)
@@ -193,8 +185,8 @@ def test_lapack_type():
     for func in "ms mls mlsx`equi".split():
         vector("(0 0;0 0.)", "0 0")
         matrix("(0 0;0 0.)", "(0 0 0.;0 0 0)")
-        type_mn_pq("(0 0;0 0.)", "0 0", left_nn=True)
-        length_mn_pq("(0 0;0 0.)", "0 0", left_nn=True)
+        type_mn_pq("(0 0;0 0.)", "0 0")
+        length_mn_pq("(0 0;0 0.)", "0 0")
         length_error("(0 0;0 0.)", "0 0 0")
         length_error("(0 0;0 0.)", "(0 0;0 0;0 0)")
         length_error("(0 0 0;0 0 0.)", "(0 0;0 0)")
