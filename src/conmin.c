@@ -64,7 +64,7 @@ make_param(K x, F* param, K* r) {
         *r = kf(*param++);
         break;
     case KF:
-        *r = make_F(param, qn(x));
+        *r = make_F(param, 0, qn(x));
         param += qn(x);
         break;
     case 0:

@@ -1,6 +1,5 @@
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
 
 #include "util.h"
 
@@ -279,9 +278,9 @@ make_F_null(L n) {
 
 
 K
-make_F(const F* a, L n) {
+make_F(const F* a_base, L a_offs, L n) {
     K x = ktn(KF, n);
-    memcpy(xF, a, n * sizeof(F));
+    copy_F(qrF(x, n), 0, a_base, a_offs, n);
     return x;
 }
 

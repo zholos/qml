@@ -1,6 +1,5 @@
 #include <stddef.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <lapack.h>
 
@@ -93,7 +92,7 @@ take_matrix(K x_, I* ldr, I* m, I* n, int* column, S* err) {
             F* a = alloc_F(ldr, err);
             if (!*ldr)
                 *m = 0;
-            memcpy(a, qrF(x, *m), *m * sizeof(F));
+            copy_F(a, 0, qrF(x, *m), 0, *m);
             q0(x);
             *column = 1;
             return a;
@@ -138,7 +137,7 @@ make_matrix(const F* a, I ldr, I m, I n, int column) {
             return make_matrix(NULL, 0, n, m, 0);
         K r = ktn(0, n);
         repeati (i, n)
-            qK(r, i) = make_F(a + i*ldr, m);
+            qK(r, i) = make_F(a, i*ldr, m);
         return r;
     }
 
@@ -169,7 +168,7 @@ make_matrix(const F* a, I ldr, I m, I n, int column) {
     if (column) {
         // assert(n == 1);
         if (a)
-            return make_F(a, m);
+            return make_F(a, 0, m);
         else
             return make_F_null(m);
     }
@@ -420,7 +419,7 @@ qml_mevu(K x) {
                 }
                 j++;
             } else
-                qK(qK(x, 1), j) = make_F(ev + j*n, n);
+                qK(qK(x, 1), j) = make_F(ev, j*n, n);
         }
     }
 

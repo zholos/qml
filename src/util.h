@@ -2,6 +2,7 @@
 #define QML_SRC_UTIL_H
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <k.h>
 
@@ -107,8 +108,18 @@ int item_I(I* r, K x, L i);
 int item_F(F* r, K x, L i);
 
 
+// dst or src may be null if n=0
+static inline void
+copy_F(F* dst_base, L dst_offs, const F* src_base, L src_offs, L n) {
+    // memcpy on null, even with 0 size, is undefined
+    // pointer arithmetic on null is undefined
+    if (n)
+        memcpy(dst_base + dst_offs,
+               src_base + src_offs, n * sizeof(F));
+}
+
 K make_F_null(L n);
-K make_F(const F* a, L n);
+K make_F(const F* a_base, L a_offs, L n);
 
 
 K new_D();
