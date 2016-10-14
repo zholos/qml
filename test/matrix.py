@@ -7,7 +7,7 @@ from fractions import Fraction
 from qform import *
 
 
-class Matrix:
+class Matrix(object):
     def __init__(self, rows):
         self.n = len(rows)
         self.m = len(rows[0])
@@ -45,9 +45,16 @@ class Matrix:
     def transpose(self):
         return Matrix(map(list, zip(*self.rows)))
 
+    @property
+    def T(self):
+        return self.transpose()
+
+    def map(self, f):
+        return Matrix([[f(i, j, self[i][j]) for j in range(self.m)]
+                                            for i in range(self.n)])
+
     def take_lower(self):
-        return Matrix([[self[i][j] if j <= i else 0 for j in range(self.m)]
-                                                    for i in range(self.n)])
+        return self.map(lambda i, j, v: v if j <= i else 0)
 
     def take_upper(self):
         return self.transpose().take_lower().transpose()
@@ -187,7 +194,7 @@ class Matrix:
                     c.append(self.column(j))
                     r.append(rre[i])
                     break
-        c, r = Matrix(c).transpose(), Matrix(r)
+        c, r = Matrix(c).T, Matrix(r)
 
         if c * r != self:
             raise Exception()
@@ -195,13 +202,13 @@ class Matrix:
 
     def pseudo_inverse(self):
         if self.rank() == min(self.n, self.m):
-            transpose = self.transpose()
+            transpose = self.T
             if self.n < self.m:
                 inverse = transpose * (self * transpose).inverse()
             else:
                 inverse = (transpose * self).inverse() * transpose
         elif self.rank() == 0:
-            return self.transpose()
+            return self.T
         else:
             c, r = self._rank_factorize()
             inverse = r.pseudo_inverse() * c.pseudo_inverse()
@@ -320,7 +327,7 @@ def rank_subjects():
 
         transposed = A.n > A.m
         if transposed:
-            A = A.transpose()
+            A = A.T
         for rank in range(1, A.n+1):
             rows, free = range(A.n), []
             for i in range(rank):
@@ -333,7 +340,7 @@ def rank_subjects():
                     B.append(map(sum, zip(A[random(free)], A[random(free)])))
             B = Matrix(B)
             if transposed:
-                B = B.transpose()
+                B = B.T
             if B.rank() == rank:
                 if B not in done:
                     done.append(B)
