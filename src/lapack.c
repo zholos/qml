@@ -121,20 +121,16 @@ take_square_matrix(K x, I* n, int* triangular, S* err) {
 }
 
 
-static int alloc_square_; // flag for passing instead of b_column
-#define alloc_square (&alloc_square_)
-
 // ldr = m is allowed, otherwise *ldr must be set on input
 // on error a = NULL and ldr = m = n = 0; the latter protects from functions
 // here and in LAPACK (e.g. dgeqrf) accessing a based on one of m and n != 0
 static F*
 take_matrix(K x, I* ldr, I* m, I* n, int* column, S* err) {
-    x = check_matrix(x, m, n, column == alloc_square ? NULL : column, err);
+    x = check_matrix(x, m, n, column, err);
     *ldr = max_i(*ldr, *m); // if ldr == m, *ldr is set above
-    I nm = column == alloc_square ? max_i(*m, *n) : *n;
-    F* a = alloc_FF(&nm, *ldr, err); // works for vector too (*n==1)
-    if (!nm)
-        *ldr = *m = *n = 0;
+    F* a = alloc_FF(n, *ldr, err); // works for vector too (*n==1)
+    if (!*n)
+        *ldr = *m = 0;
     copy_matrix(x, a, *ldr, *m, *n, column && *column);
     return a;
 }
@@ -470,7 +466,14 @@ mqr(K x, const int pivot) {
     I n, m, info;
     S err = NULL;
 
-    F* a = take_matrix(x, &m, &m, &n, alloc_square, &err);
+    // allocate m-by-max(m,n) matrix to fit m-by-m Q later
+    x = check_matrix(x, &m, &n, NULL, &err);
+    I nm = max_i(m, n);
+    F* a = alloc_FF(&nm, m, &err);
+    if (!nm)
+        m = n = 0;
+    copy_matrix(x, a, m, m, n, 0);
+
     I min = min_i(m, n);
 
     I lwork_query = -1;
