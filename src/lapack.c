@@ -807,9 +807,9 @@ qml_mlsq(K x, K y) {
 
 // undocumented no-op function to benchmark matrix format conversion
 static K
-mnoop(K x, int square, int triangular_) {
+mnoop(K x, int square, int triangular_, int mark, int upper, int lower) {
     int triangular = 0;
-    int column = 0;
+    int column = upper ? make_upper : lower ? make_lower : 0;
     I m, n;
     S err = NULL;
     F* a;
@@ -818,7 +818,14 @@ mnoop(K x, int square, int triangular_) {
             x, &n, triangular_ ? &triangular : NULL, &err);
         m = n;
     } else
-        a = take_matrix(x, &m, &m, &n, &column, &err);
+        a = take_matrix(x, &m, &m, &n, column ? NULL : &column, &err);
+
+    if (mark)
+        repeat (i, n)
+            repeat (j, m) {
+                F* v = &a[j+i*m];
+                *v = *v*10000 + ((j+1)*100 + (i+1))*(*v<0?-1:1);
+            }
 
     x = make_matrix(a, m, m, n, column);
     free_F(a);
@@ -835,20 +842,23 @@ mnoop(K x, int square, int triangular_) {
 static const struct optn noop_opt[] = {
     [0] = { "square", 0 },
     [1] = { "triangular", 0 },
+    [2] = { "mark", 0 },
+    [3] = { "upper", 0 },
+    [4] = { "lower", 0 },
           { NULL }
 };
 
 K
 qml_mnoopx(K opts, K x) {
-    union optv v[] = { { 0 }, { 0 } };
+    union optv v[] = { { 0 }, { 0 }, { 0 }, { 0 }, { 0 } };
     if (!take_opt(opts, noop_opt, v))
         return krr("opt");
-    if (!v[0].i && v[1].i)
+    if (!v[0].i && v[1].i || v[3].i && v[4].i)
         return krr("opt");
-    return mnoop(x, v[0].i, v[1].i);
+    return mnoop(x, v[0].i, v[1].i, v[2].i, v[3].i, v[4].i);
 }
 
 K
 qml_mnoop(K x) {
-    return mnoop(x, 0, 0);
+    return mnoop(x, 0, 0, 0, 0, 0);
 }
