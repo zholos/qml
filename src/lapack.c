@@ -121,17 +121,15 @@ take_square_matrix(K x, I* n, int* triangular, S* err) {
 }
 
 
-// ldr = m is allowed, otherwise *ldr must be set on input
-// on error a = NULL and ldr = m = n = 0; the latter protects from functions
-// here and in LAPACK (e.g. dgeqrf) accessing a based on one of m and n != 0
+// on error a = NULL and m = n = 0; the latter protects from functions here and
+// in LAPACK (e.g. dgeqrf) accessing a based on one of m and n != 0
 static F*
-take_matrix(K x, I* ldr, I* m, I* n, int* column, S* err) {
+take_matrix(K x, I* m, I* n, int* column, S* err) {
     x = check_matrix(x, m, n, column, err);
-    *ldr = max_i(*ldr, *m); // if ldr == m, *ldr is set above
-    F* a = alloc_FF(n, *ldr, err); // works for vector too (*n==1)
+    F* a = alloc_FF(n, *m, err); // works for vector too (*n==1)
     if (!*n)
-        *ldr = *m = 0;
-    copy_matrix(x, a, *ldr, *m, *n, column && *column);
+        *m = 0;
+    copy_matrix(x, a, *m, *m, *n, column && *column);
     return a;
 }
 
@@ -319,8 +317,8 @@ qml_mm(K x, K y) {
     I a_m, a_n, b_m, b_n;
     S err = NULL;
 
-    F* a = take_matrix(x, &a_m, &a_m, &a_n, NULL, &err);
-    F* b = take_matrix(y, &b_m, &b_m, &b_n, &b_column, &err);
+    F* a = take_matrix(x, &a_m, &a_n, NULL, &err);
+    F* b = take_matrix(y, &b_m, &b_n, &b_column, &err);
     if (a_n != b_m)
         if (!err) err = "length";
 
@@ -358,7 +356,7 @@ qml_ms(K x, K y) {
     if (!a_triangular)
         if (!err) err = "domain";
 
-    F* b = take_matrix(y, &b_m, &b_m, &b_n, &b_column, &err);
+    F* b = take_matrix(y, &b_m, &b_n, &b_column, &err);
     if (a_n != b_m)
         if (!err) err = "length";
 
@@ -547,7 +545,7 @@ qml_mlup(K x) {
     I m, n, info;
     S err = NULL;
 
-    F* a = take_matrix(x, &m, &m, &n, NULL, &err);
+    F* a = take_matrix(x, &m, &n, NULL, &err);
 
     I min = min_i(m, n);
     I* ipiv = alloc_I(&min, &err);
@@ -579,7 +577,7 @@ qml_msvd(K x) {
     I m, n, info;
     S err = NULL;
 
-    F* a = take_matrix(x, &m, &m, &n, NULL, &err);
+    F* a = take_matrix(x, &m, &n, NULL, &err);
     I min = min_i(m, n);
 
     I lwork_query = -1;
@@ -694,7 +692,7 @@ mls(K x, K y, int equi) {
     S err = NULL;
 
     F* a = take_square_matrix(x, &a_n, NULL, &err);
-    F* b = take_matrix(y, &b_m, &b_m, &b_n, &b_column, &err);
+    F* b = take_matrix(y, &b_m, &b_n, &b_column, &err);
     if (a_n != b_m)
         if (!err) err = "length";
 
@@ -764,9 +762,16 @@ mlsq(K x, K y, int svd) {
     I a_m, a_n, b_m, b_n, info;
     S err = NULL;
 
-    F* a = take_matrix(x, &a_m, &a_m, &a_n, NULL, &err);
-    I ldb = a_n;
-    F* b = take_matrix(y, &ldb, &b_m, &b_n, &b_column, &err);
+    F* a = take_matrix(x, &a_m, &a_n, NULL, &err);
+
+    // b has a_m rows in input but a_n rows in output, so allocate larger array
+    y = check_matrix(y, &b_m, &b_n, &b_column, &err);
+    I ldb = max_i(a_n, b_m);
+    F* b = alloc_FF(&ldb, b_n, &err);
+    if (!ldb)
+        b_n = b_m = 0;
+    copy_matrix(y, b, ldb, b_m, b_n, b_column);
+
     if (a_m != b_m) {
         ldb = a_m = b_m = 0; // avoid accessing uninitialized part of b
         if (!err) err = "length";
@@ -844,7 +849,7 @@ mnoop(K x, int square, int triangular_, int mark, int upper, int lower) {
             x, &n, triangular_ ? &triangular : NULL, &err);
         m = n;
     } else
-        a = take_matrix(x, &m, &m, &n, column ? NULL : &column, &err);
+        a = take_matrix(x, &m, &n, column ? NULL : &column, &err);
 
     if (mark)
         repeati (i, n)
