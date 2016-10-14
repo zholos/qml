@@ -93,7 +93,7 @@ take_matrix(K x_, I* ldr, I* m, I* n, int* column, S* err) {
             F* a = alloc_F(ldr, err);
             if (!*ldr)
                 *m = 0;
-            memcpy(a, xF, *m * sizeof(F));
+            memcpy(a, qrF(x, *m), *m * sizeof(F));
             q0(x);
             *column = 1;
             return a;

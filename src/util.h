@@ -48,6 +48,11 @@
 #define qE(x, i) qT__((x), (i), KE, E)
 #define qF(x, i) qT__((x), (i), KF, F)
 
+// pointer to range of n typed values
+#define qrT__(x, n_, t_, T) \
+    k##T((assert((x) && (x)->t == t_ && (n_) >= 0 && (n_) <= (x)->n), (x)))
+#define qrF(x, i) qrT__((x), (i), KF, F)
+
 #define q0(x) (assert((x)), r0((x)), (x) = NULL, (void)0)
 
 
