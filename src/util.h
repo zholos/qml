@@ -129,6 +129,7 @@ void append_D(K x, S k, K v);
 static inline I min_i(I x, I y) { return x <= y ? x : y; }
 static inline I max_i(I x, I y) { return x >= y ? x : y; }
 
+static inline void swap_i(I* x, I* y) { I t = *x; *x = *y; *y = t; }
 static inline void swap_l(L* x, L* y) { L t = *x; *x = *y; *y = t; }
 static inline void swap_f(F* x, F* y) { F t = *x; *x = *y; *y = t; }
 

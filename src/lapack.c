@@ -43,6 +43,16 @@ take_maxwork(I info, F maxwork) {
     free_F(w__full)
 
 
+// column argument values
+// note: some functions do arithmetic on these, e.g. !!column to distinguish
+// make_column from make_general
+enum {
+    make_upper = -1, // upper triangular
+    make_lower = -2, // lower triangular with 1 on diagonal
+    make_general = 0,
+    make_column = 1
+};
+
 // check if x is a q matrix, return number of rows (m) and columns (n)
 // returned x must be passed to copy_matrix or released with if (x) q0(x);
 // if check fails, err is set and m=0 - so copy_matrix() may still be called
@@ -55,10 +65,10 @@ check_matrix(K x_, I* m, I* n, int* column, S* err) {
             *n = 1;
             if (!likely(*m = qnw(x)))
                 if (!*err) *err = "type";
-            *column = 1;
+            *column = make_column;
             return x;
         }
-        *column = 0;
+        *column = make_general;
     }
 
     K x = convert_FF(x_);
@@ -134,69 +144,65 @@ take_matrix(K x, I* m, I* n, int* column, S* err) {
 }
 
 
-#define make_transposed (-1)
-#define make_upper      (-2)
-#define make_lower      (-3)
-
 // if a is null matrix is filled with NaNs
 static K
-make_matrix(const F* a, I ldr, I m, I n, int column) {
-    if (column == make_transposed) {
-        if (!a)
-            return make_matrix(NULL, 0, n, m, 0);
-        K r = ktn(0, n);
-        repeati (i, n)
-            qK(r, i) = make_F(a, i*ldr, m);
-        return r;
-    }
+make_matrix(const F* a, I lda, I m, I n, int column, int flip) {
+    assert(!flip || column == make_general);
+    if (flip)
+        swap_i(&m, &n);
+    // m and n now refer to x shape
 
-    if (column == make_upper || column == make_lower) {
-        if (!a)
-            return make_matrix(NULL, 0, m, n, 0);
-        K r = ktn(0, m);
-        repeati (j, m) {
-            K x = ktn(KF, n);
-            if (column == make_upper) {
-                repeati (i, min_i(j, n))
-                    qF(x, i) = 0;
-                repeati_ (i, j, n)
-                    qF(x, i) = a[j + ldr*i];
-            } else {
-                repeati (i, min_i(j, n))
-                    qF(x, i) = a[j + ldr*i];
-                if (j < n)
-                    qF(x, j) = 1;
-                repeati_ (i, j+1, n)
-                    qF(x, i) = 0;
-            }
-            qK(r, j) = x;
-        }
-        return r;
-    }
-
-    if (column) {
-        // assert(n == 1);
-        if (a)
-            return make_F(a, 0, m);
-        else
+    if (!likely(a))
+        if (column > 0) // may also be make_upper or make_lower here
+            // n == 1, unless result is being discarded ('length in qml_mm)
             return make_F_null(m);
+        else {
+            K r = ktn(0, m);
+            K x = make_F_null(n);
+            repeati (j, m)
+                qK(r, j) = r1(x);
+            q0(x);
+            return r;
+        }
+
+    if (!column) { // most common case
+        K r = ktn(0, m);
+        repeati (j, m)
+            if (!flip) {
+                // TODO: cache-optimized transpose
+                K x = ktn(KF, n);
+                repeati (i, n)
+                    qF(x, i) = a[j + i*lda];
+                qK(r, j) = x;
+            } else
+                qK(r, j) = make_F(a, j*lda, n);
+        return r;
     }
+
+    if (column == make_column) {
+        assert(n <= 1);
+        return make_F(a, 0, m);
+    }
+
+    assert(column == make_upper || column == make_lower);
 
     K r = ktn(0, m);
-    if (a)
-        // Most common case
-        // TODO: cache-optimized transpose
-        repeati (j, m) {
-            K x = ktn(KF, n);
-            repeati (i, n)
-                qF(x, i) = a[j + i*ldr];
-            qK(r, j) = x;
+    repeati (j, m) {
+        K x = ktn(KF, n);
+        if (column == make_upper) {
+            repeati (i, min_i(j, n))
+                qF(x, i) = 0;
+            repeati_ (i, j, n)
+                qF(x, i) = a[j + lda*i];
+        } else {
+            repeati (i, min_i(j, n))
+                qF(x, i) = a[j + lda*i];
+            if (j < n)
+                qF(x, j) = 1;
+            repeati_ (i, j+1, n)
+                qF(x, i) = 0;
         }
-    else {
-        K x = make_F_null(n);
-        repeati (j, m)
-            qK(r, j) = r1(x);
-        q0(x);
+        qK(r, j) = x;
     }
     return r;
 }
@@ -303,7 +309,7 @@ qml_minv(K x) {
 
     free_I(ipiv);
 
-    x = make_matrix(info ? NULL : a, n, n, n, 0);
+    x = make_matrix(info ? NULL : a, n, n, n, make_general, 0);
     free_F(a);
 
     return check_err(x, err);
@@ -338,7 +344,7 @@ qml_mm(K x, K y) {
 
     free_F(b);
     free_F(a);
-    x = make_matrix(err ? NULL : r, a_m, a_m, b_n, b_column);
+    x = make_matrix(err ? NULL : r, a_m, a_m, b_n, b_column, 0);
     free_F(r);
 
     return check_err(x, err);
@@ -377,7 +383,7 @@ qml_ms(K x, K y) {
     }
 
     free_F(a);
-    x = make_matrix(info ? NULL : b, b_m, b_m, b_n, b_column);
+    x = make_matrix(info ? NULL : b, b_m, b_m, b_n, b_column, 0);
     free_F(b);
 
     return check_err(x, err);
@@ -413,7 +419,7 @@ qml_mevu(K x) {
     qK(x, 0) = make_complex_vector(info ? NULL : lr, info ? NULL : li, n);
 
     if (qt(qK(x, 0))) // no complex elements (also when info)
-        qK(x, 1) = make_matrix(info ? NULL : ev, n, n, n, make_transposed);
+        qK(x, 1) = make_matrix(info ? NULL : ev, n, n, n, make_general, 1);
     else {
         assert(!info);
         qK(x, 1) = ktn(0, n);
@@ -451,7 +457,7 @@ qml_mchol(K x) {
     dpotrf_("U", &n, a, &n, &info);
     check_info(info, &err);
 
-    x = make_matrix(info ? NULL : a, n, n, n, make_upper);
+    x = make_matrix(info ? NULL : a, n, n, n, make_upper, 0);
     free_F(a);
 
     return check_err(x, err);
@@ -511,7 +517,7 @@ mqr(K x, const int pivot) {
             dgeqrf_(&m, &n, a, &m,   tau, w, &lwork, &info);
     check_info(info, &err);
 
-    K r = make_matrix(a, m, m, n, make_upper);
+    K r = make_matrix(a, m, m, n, make_upper, 0);
 
     dorgqr_(&m, &m, &min, a, &m, tau, w, &lwork, &info);
     check_info(info, &err);
@@ -519,7 +525,7 @@ mqr(K x, const int pivot) {
     free_F(tau);
 
     x = ktn(0, 2);
-    qK(x, 0) = make_matrix(a, m, m, m, 0);
+    qK(x, 0) = make_matrix(a, m, m, m, make_general, 0);
     qK(x, 1) = r;
     if (pivot)
         jk(&x, p);
@@ -556,8 +562,8 @@ qml_mlup(K x) {
     check_info(info, &err);
 
     x = ktn(0, 3);
-    qK(x, 0) = make_matrix(a, m, m, min, make_lower);
-    qK(x, 1) = make_matrix(a, m, min, n, make_upper);
+    qK(x, 0) = make_matrix(a, m, m, min, make_lower, 0);
+    qK(x, 1) = make_matrix(a, m, min, n, make_upper, 0);
     L* q = kL(qK(x, 2) = ktn(KL, m));
     repeati (i, m)
         q[i] = i;
@@ -602,7 +608,7 @@ qml_msvd(K x) {
     free_F(a);
 
     x = ktn(0, 3);
-    qK(x, 0) = make_matrix(info ? NULL : u, m, m, m, 0);
+    qK(x, 0) = make_matrix(info ? NULL : u, m, m, m, make_general, 0);
     qK(x, 1) = ktn(0, m);
     repeati (j, m) {
         K q = qK(qK(x, 1), j) = ktn(KF, n);
@@ -611,7 +617,7 @@ qml_msvd(K x) {
         if (j < n)
             qF(q, j) = info ? nf : s[j];
     }
-    qK(x, 2) = make_matrix(info ? NULL : vt, n, n, n, make_transposed);
+    qK(x, 2) = make_matrix(info ? NULL : vt, n, n, n, make_general, 1);
     free_F(vt);
     free_F(u);
     free_F(s);
@@ -731,7 +737,7 @@ mls(K x, K y, int equi) {
     free(ipiv);
     free(a);
 
-    x = make_matrix(info ? NULL : b, b_m, b_m, b_n, b_column);
+    x = make_matrix(info ? NULL : b, b_m, b_m, b_n, b_column, 0);
     free(b);
     return check_err(x, err);
 }
@@ -812,7 +818,7 @@ mlsq(K x, K y, int svd) {
     free_W();
     free(a);
 
-    x = make_matrix(info ? NULL : b, ldb, a_n, b_n, b_column);
+    x = make_matrix(info ? NULL : b, ldb, a_n, b_n, b_column, 0);
     free(b);
     return check_err(x, err);
 }
@@ -858,7 +864,7 @@ mnoop(K x, int square, int triangular_, int mark, int upper, int lower) {
                 *v = *v*10000 + ((j+1)*100 + (i+1))*(*v<0?-1:1);
             }
 
-    x = make_matrix(a, m, m, n, column);
+    x = make_matrix(a, m, m, n, column, 0);
     free_F(a);
     if (triangular_) {
         K d = new_D();
