@@ -61,8 +61,8 @@ take_square_matrix(K x_, I* n, int* triangular, S* err) {
 
     if (triangular) {
         int upper = 1, lower = 1;
-        repeati (j, *n)
-            repeati (i, *n)
+        repeati (i, *n)
+            repeati (j, *n)
                 if ((a[j + i * *n] = qF(qK(x, j), i)))
                     if (i < j) // non-zero below diagonal, so not upper
                         upper = 0;
@@ -70,8 +70,8 @@ take_square_matrix(K x_, I* n, int* triangular, S* err) {
                         lower = 0;
         *triangular = upper ? 1 : lower ? -1 : 0;
     } else
-        repeati (j, *n)
-            repeati (i, *n)
+        repeati (i, *n)
+            repeati (j, *n)
                 a[j + i * *n] = qF(qK(x, j), i);
 
     if (x) q0(x);
@@ -117,8 +117,9 @@ take_matrix(K x_, I* ldr, I* m, I* n, int* column, S* err) {
     F* a = alloc_FF(&nm, *ldr, err);
     if (!nm)
         *m = *n = 0;
-    repeati (j, *m)
-        repeati (i, *n)
+    // favoring sequential writes over sequential reads seems to be faster
+    repeati (i, *n)
+        repeati (j, *m)
             a[j + i * *ldr] = qF(qK(x, j), i);
     if (x) q0(x);
     return a;
