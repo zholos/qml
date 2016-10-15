@@ -182,15 +182,16 @@ def test_lapack_type():
         vector("(0 0 0;0 0 0)", "0 0 0")
 
     # f(n*n, n*p)
-    for func in "ms mls mlsx`equi".split():
+    for func in "ms mls mlsx`equi mlsx`flip mlsx`flip`equi".split():
+        flip = "`flip" in func
         vector("(0 0;0 0.)", "0 0")
-        matrix("(0 0;0 0.)", "(0 0 0.;0 0 0)")
+        matrix("(0 0;0 0.)", "flip"*flip+"(0 0 0.;0 0 0)")
         type_mn_pq("(0 0;0 0.)", "0 0")
         length_mn_pq("(0 0;0 0.)", "0 0")
         length_error("(0 0;0 0.)", "0 0 0")
-        length_error("(0 0;0 0.)", "(0 0;0 0;0 0)")
-        length_error("(0 0 0;0 0 0.)", "(0 0;0 0)")
-        length_error("(0 0 0;0 0 0)", "0 0 0")
+        length_error("(0 0;0 0.)", "flip"*flip+"(0 0;0 0;0 0)")
+        length_error("flip"*flip+"(0 0 0;0 0 0.)", "(0 0;0 0)")
+        length_error("flip"*flip+"(0 0 0;0 0 0)", "0 0 0")
 
         # ms requires a triangular matrix
         if func == "ms":
@@ -203,17 +204,18 @@ def test_lapack_type():
             domain_error("(1 0 1;1 1 0;0 0 1)", "0 0 0")
 
     # f(m*n, m*p)
-    for func in "mlsq mlsqx`svd".split():
+    for func in "mlsq mlsqx`svd mlsqx`flip mlsqx`flip`svd".split():
+        flip = "`flip" in func
         vector("(0 0;0 0)", "0 0")
         matrix("(0 0;0 0)", "(0 0;0 0)")
-        vector("(0 0;0 0;0 0)", "0 0 0")
-        vector("(0 0 0;0 0 0)", "0 0")
-        matrix("(0 0;0 0;0 0)", "(0 0;0 0;0 0)")
-        matrix("(0 0 0;0 0 0)", "(0 0;0 0)")
+        vector("flip"*flip+"(0 0;0 0;0 0)", "0 0 0")
+        vector("flip"*flip+"(0 0 0;0 0 0)", "0 0")
+        matrix("flip"*flip+"(0 0;0 0;0 0)", "flip"*flip+"(0 0;0 0;0 0)")
+        matrix("flip"*flip+"(0 0 0;0 0 0)", "(0 0;0 0)")
         type_mn_pq("(0 0;0 0)", "0 0")
         length_mn_pq("(0 0;0 0)", "0 0")
-        length_error("(0 0 0;0 0 0)", "0 0 0")
-        length_error("(0 0 0;0 0 0)", "(0 0;0 0;0 0)")
+        length_error("flip"*flip+"(0 0 0;0 0 0)", "0 0 0")
+        length_error("flip"*flip+"(0 0 0;0 0 0)", "flip"*flip+"(0 0;0 0;0 0)")
 
 def test_lapack_shape():
     """Check matrix functions for large input data and mismatched shapes."""
@@ -250,6 +252,12 @@ def test_lapack_shape():
 
     def each(result, cond=None, zero_size=False, triangulars=None):
         def emit(Am, An, Bm, Bn):
+            if lflip:
+                Am, An = An, Am
+            if B != 3 and rmflip:
+                Bm, Bn = Bn, Bm
+            if B == 3 and rvskip:
+                return
             if Am == 0 or Bm == 0:
                 return # can't render zero-height with specific width in q
             if triangulars is None:
@@ -292,12 +300,12 @@ def test_lapack_shape():
             if max(A, B) <= 2:
                 find()
 
-    func = "mm"
+    func = "mm"; lflip = rmflip = rvskip = False
     each("0h", lambda Am, An, Bm, Bn: An == Bm)
     each("`type", zero_size=True)
     each("`length", lambda Am, An, Bm, Bn: An != Bm)
 
-    func = "ms"
+    func = "ms"; lflip = rmflip = rvskip = False
     each("0h", lambda Am, An, Bm, Bn: Am == An == Bm,
          triangulars=">= <=")
     each("`domain", lambda Am, An, Bm, Bn: Am == An == Bm > 1,
@@ -309,13 +317,15 @@ def test_lapack_shape():
     each("`length", lambda Am, An, Bm, Bn: Bm == Am != An,
          triangulars=">= <=")
 
-    for func in "mls mlsx`equi".split():
+    for func in "mls mlsx`equi mlsx`flip mlsx`flip`equi".split():
+        lflip = rmflip = "`flip" in func; rvskip = False
         each("0h", lambda Am, An, Bm, Bn: Am == An == Bm)
         each("`type", lambda Am, An, Bm, Bn: Am == An, zero_size=True)
         each("`length", lambda Am, An, Bm, Bn: Am == An != Bm)
         each("`length", lambda Am, An, Bm, Bn: Bm == Am != An)
 
-    for func in "mlsq mlsqx`svd".split():
+    for func in "mlsq mlsqx`svd mlsqx`flip mlsqx`flip`svd".split():
+        lflip = rmflip = "`flip" in func; rvskip = False
         # actual operation is slow so skip largest valid result (0h) tests
         each("0h", lambda Am, An, Bm, Bn: Am == Bm and An < 1000)
         each("`type", zero_size=True)

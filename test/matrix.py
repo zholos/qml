@@ -406,14 +406,15 @@ def test_ms():
                 Z[i][i] = 0
                 emit(Z, B, Matrix.null_matrix(B.n, B.m))
 
-def test_mls(equi):
-    routine = "mlsx[`equi" if equi else "mls"
+def test_mls(equi, flip):
+    routine = "mlsx["+"`equi"*equi+"`flip"*flip if equi or flip else "mls"
     def emit(A, B, X):
-        test(routine, A, B, X)
+        op = lambda x: x.T if flip else x
+        test(routine, op(A), op(B), op(X))
         if B.m == 1:
-            test(routine, A, B.column(0), X.column(0))
+            test(routine, op(A), B.column(0), X.column(0))
 
-    if not equi:
+    if not (equi or flip):
         test(routine, [[0]], [1], [None], comment="ATLAS dgetf2() return code")
 
     single_done = 0
@@ -441,12 +442,13 @@ def test_mls(equi):
                 emit(    A * R,     B, R.inverse() * X)
                 emit(L * A * R, L * B, R.inverse() * X)
 
-def test_mlsq(svd):
-    routine = "mlsqx[`svd" if svd else "mlsq"
+def test_mlsq(svd, flip):
+    routine = "mlsqx["+"`svd"*svd+"`flip"*flip if svd or flip else "mlsq"
     def emit(A, B, X):
-        test(routine, A, B, X)
+        op = lambda x: x.T if flip else x
+        test(routine, op(A), op(B), op(X))
         if B.m == 1:
-            test(routine, A, B.column(0), X.column(0))
+            test(routine, op(A), B.column(0), X.column(0))
 
     single_done = 0
     for A, B in itertools.product(subjects, repeat=2):
@@ -520,10 +522,12 @@ def tests():
     test_mm()
     prec("1e-7")
     test_ms()
-    test_mls(False)
-    test_mls(True)
-    test_mlsq(False)
-    test_mlsq(True)
+    for flip in False, True:
+        for equi in False, True:
+            test_mls(equi, flip)
+    for flip in False, True:
+        for svd in False, True:
+            test_mlsq(svd, flip)
     test_mkron()
     test_mnoop()
 

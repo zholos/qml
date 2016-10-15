@@ -714,13 +714,16 @@ done:
 
 // Linear equations
 static K
-mls(K x, K y, int equi) {
+mls(K x, K y, int equi, int flip) {
     int b_column;
     I a_n, b_m, b_n, info;
     S err = NULL;
 
-    F* a = take_square_matrix(x, &a_n, NULL, 0, &err);
-    F* b = take_matrix(y, &b_m, &b_n, &b_column, 0, &err);
+    // with equi always flip A because dgesvx can accept transposed data
+    F* a = take_square_matrix(x, &a_n, NULL, flip || equi, &err);
+    F* b = take_matrix(y, &b_m, &b_n, &b_column, flip, &err);
+    if (flip && b_column)
+        swap_i(&b_m, &b_n); // turn row back into column and don't flip result
     if (a_n != b_m)
         if (!err) err = "length";
 
@@ -742,8 +745,8 @@ mls(K x, K y, int equi) {
         F rcond;
         char equed;
 
-        dgesvx_("E", "N", &a_n, &b_n, a, &a_n, af, &a_n, ipiv, &equed, r, c,
-                bi, &b_m, b, &b_m, &rcond, ferr, berr, w, iw, &info);
+        dgesvx_("E", flip?"N":"T", &a_n, &b_n, a, &a_n, af, &a_n, ipiv, &equed,
+                r, c, bi, &b_m, b, &b_m, &rcond, ferr, berr, w, iw, &info);
         free_I(iw);
         free_F(berr);
         free_F(ferr);
@@ -759,49 +762,59 @@ mls(K x, K y, int equi) {
     free(ipiv);
     free(a);
 
-    x = make_matrix(info ? NULL : b, b_m, b_m, b_n, b_column, 0);
+    x = make_matrix(info ? NULL : b, b_m, b_m, b_n, b_column,
+                    flip && !b_column);
     free(b);
     return check_err(x, err);
 }
 
 static const struct optn ls_opt[] = {
     [0] = { "equi", 0 },
+    [1] = { "flip", 0 },
           { NULL }
 };
 
 K
 qml_mlsx(K opts, K x, K y) {
-    union optv v[] = { { 0 } };
+    union optv v[] = { { 0 }, { 0 } };
     if (!take_opt(opts, ls_opt, v))
         return krr("opt");
-    return mls(x, y, v[0].i);
+    return mls(x, y, v[0].i, v[1].i);
 }
 
 K
 qml_mls(K x, K y) {
-    return mls(x, y, 0);
+    return mls(x, y, 0, 0);
 }
 
 
 // Linear least squares
 static K
-mlsq(K x, K y, int svd) {
+mlsq(K x, K y, int svd, int flip) {
     int b_column;
     I a_m, a_n, b_m, b_n, info;
     S err = NULL;
 
-    F* a = take_matrix(x, &a_m, &a_n, NULL, 0, &err);
+    // without svd always flip A because dgels can accept transposed data
+    F* a = take_matrix(x, &a_m, &a_n, NULL, flip || !svd, &err);
+    I eqns = !svd && !flip ? a_n : a_m;
+    I vars = !svd && !flip ? a_m : a_n;
 
     // b has a_m rows in input but a_n rows in output, so allocate larger array
     y = check_matrix(y, &b_m, &b_n, &b_column, &err);
-    I ldb = max_i(a_n, b_m);
+    if (flip && !b_column)
+        swap_i(&b_m, &b_n); // flip right matrix and corresponding result
+        // note: compared to mls() the swap goes in the other branch because
+        // there take_matrix() is called and does another swap
+    I ldb = max_i(vars, b_m);
     F* b = alloc_FF(&ldb, b_n, &err);
     if (!ldb)
         b_n = b_m = 0;
-    copy_matrix(y, b, ldb, b_m, b_n, b_column, 0);
+    copy_matrix(y, b, ldb, b_m, b_n, b_column, flip && !b_column);
 
-    if (a_m != b_m) {
-        ldb = a_m = b_m = 0; // avoid accessing uninitialized part of b
+    if (eqns != b_m) {
+        // avoid accessing uninitialized part of b
+        ldb = eqns = vars = a_m = a_n = b_m = 0;
         if (!err) err = "length";
     }
 
@@ -814,7 +827,7 @@ mlsq(K x, K y, int svd) {
         dgelsd_(&a_m, &a_n, &b_n, NULL, &a_m, NULL, &ldb,
                 NULL, &rcond, &rank, &maxwork, &lwork_query, &liwork, &info);
     else
-        dgels_("N", &a_m, &a_n, &b_n, NULL, &a_m, NULL, &ldb,
+        dgels_(flip?"N":"T", &a_m, &a_n, &b_n, NULL, &a_m, NULL, &ldb,
                &maxwork, &lwork_query, &info);
     check_info(info, &err);
 
@@ -833,34 +846,36 @@ mlsq(K x, K y, int svd) {
         free(iw);
         free(s);
     } else
-        dgels_("N", &a_m, &a_n, &b_n, a, &a_m, b, &ldb,
+        dgels_(flip?"N":"T", &a_m, &a_n, &b_n, a, &a_m, b, &ldb,
                w, &lwork, &info);
 
     check_info(info, &err);
     free_W();
     free(a);
 
-    x = make_matrix(info ? NULL : b, ldb, a_n, b_n, b_column, 0);
+    x = make_matrix(info ? NULL : b, ldb, vars, b_n, b_column,
+                    flip && !b_column);
     free(b);
     return check_err(x, err);
 }
 
 static const struct optn lsq_opt[] = {
-    [0] = { "svd", 0 },
+    [0] = { "svd",  0 },
+    [1] = { "flip", 0 },
           { NULL }
 };
 
 K
 qml_mlsqx(K opts, K x, K y) {
-    union optv v[] = { { 0 } };
+    union optv v[] = { { 0 }, { 0 } };
     if (!take_opt(opts, lsq_opt, v))
         return krr("opt");
-    return mlsq(x, y, v[0].i);
+    return mlsq(x, y, v[0].i, v[1].i);
 }
 
 K
 qml_mlsq(K x, K y) {
-    return mlsq(x, y, 0);
+    return mlsq(x, y, 0, 0);
 }
 
 
