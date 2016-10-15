@@ -148,11 +148,19 @@ make_matrix(const F* a, I ldr, I m, I n, int column) {
         K r = ktn(0, m);
         repeati (j, m) {
             K x = ktn(KF, n);
-            repeati (i, n)
-                if (column == make_upper)
-                    qF(x, i) = i < j ? 0 : a[j + ldr*i];
-                else
-                    qF(x, i) = i < j ? a[j + ldr*i] : i == j ? 1 : 0;
+            if (column == make_upper) {
+                repeati (i, min_i(j, n))
+                    qF(x, i) = 0;
+                repeati_ (i, j, n)
+                    qF(x, i) = a[j + ldr*i];
+            } else {
+                repeati (i, min_i(j, n))
+                    qF(x, i) = a[j + ldr*i];
+                if (j < n)
+                    qF(x, j) = 1;
+                repeati_ (i, j+1, n)
+                    qF(x, i) = 0;
+            }
             qK(r, j) = x;
         }
         return r;
