@@ -276,7 +276,8 @@ qml_mdet(K x) {
     I n, info;
     S err = NULL;
 
-    F* a = take_square_matrix(x, &n, &triangular, 0, &err);
+    // |A|=|A'|, so flipping input doesn't affect output
+    F* a = take_square_matrix(x, &n, &triangular, 1, &err);
     F r = 1;
 
     if (!triangular) {
@@ -296,8 +297,7 @@ qml_mdet(K x) {
         r *= a[i + i*n];
     free_F(a);
 
-    if (err) return krr(err);
-    return kf(r);
+    return check_err(kf(r), err);
 }
 
 
@@ -307,7 +307,8 @@ qml_minv(K x) {
     I n, info;
     S err = NULL;
 
-    F* a = take_square_matrix(x, &n, NULL, 0, &err);
+    // inv(A)'=inv(A'), so flip both input and output
+    F* a = take_square_matrix(x, &n, NULL, 1, &err);
     I* ipiv = alloc_I(&n, &err);
 
     dgetrf_(&n, &n, a, &n, ipiv, &info);
@@ -331,7 +332,7 @@ qml_minv(K x) {
 
     free_I(ipiv);
 
-    x = make_matrix(info ? NULL : a, n, n, n, make_general, 0);
+    x = make_matrix(info ? NULL : a, n, n, n, make_general, 1);
     free_F(a);
 
     return check_err(x, err);
@@ -345,28 +346,33 @@ qml_mm(K x, K y) {
     I a_m, a_n, b_m, b_n;
     S err = NULL;
 
-    F* a = take_matrix(x, &a_m, &a_n, NULL, 0, &err);
-    F* b = take_matrix(y, &b_m, &b_n, &b_column, 0, &err);
-    if (a_n != b_m)
+    // (AB)'=B'A', so flip inputs, multiply in reverse order, and flip output
+    F* a = take_matrix(x, &a_m, &a_n, NULL, 1, &err);
+    F* b = take_matrix(y, &b_m, &b_n, &b_column, 1, &err);
+    I m = b_m;
+    I n = a_n;
+    I k = a_m;
+    if (k != b_n)
         if (!err) err = "length";
 
-    F* r = alloc_FF(&b_n, a_m, &err);
+    F* r = alloc_FF(&m, n, &err);
 
+    // BLAS doesn't check for zero size like LAPACK, so skip call on error
     if (!err) {
         int i_1 = 1;
         double f_0 = 0, f_1 = 1;
-        if (b_n == 1)
-            dgemv_("N", &a_m, &a_n, &f_1, a, &a_m, b, &i_1, &f_0, r, &i_1);
-        else if (a_m == 1)
-            dgemv_("T", &b_m, &b_n, &f_1, b, &b_m, a, &i_1, &f_0, r, &i_1);
+        if (m == 1)
+            dgemv_("T", &a_m, &a_n, &f_1, a, &a_m, b, &i_1, &f_0, r, &i_1);
+        else if (n == 1)
+            dgemv_("N", &b_m, &b_n, &f_1, b, &b_m, a, &i_1, &f_0, r, &i_1);
         else
-            dgemm_("N", "N", &a_m, &b_n, &a_n,
-                &f_1, a, &a_m, b, &b_m, &f_0, r, &a_m);
+            dgemm_("N", "N", &m, &n, &k,
+                   &f_1, b, &b_m, a, &a_m, &f_0, r, &m);
     }
 
     free_F(b);
     free_F(a);
-    x = make_matrix(err ? NULL : r, a_m, a_m, b_n, b_column, 0);
+    x = make_matrix(err ? NULL : r, m, m, n, b_column, 1);
     free_F(r);
 
     return check_err(x, err);
@@ -380,12 +386,14 @@ qml_ms(K x, K y) {
     I a_n, b_m, b_n;
     S err = NULL;
 
-    F* a = take_square_matrix(x, &a_n, &a_triangular, 0, &err);
+    // AX=B <=> X'A'=B', so flip inputs and outputs and specify this equation
+    // type (A on right side) in dtrsm
+    F* a = take_square_matrix(x, &a_n, &a_triangular, 1, &err);
     if (!a_triangular)
         if (!err) err = "domain";
 
-    F* b = take_matrix(y, &b_m, &b_n, &b_column, 0, &err);
-    if (a_n != b_m)
+    F* b = take_matrix(y, &b_m, &b_n, &b_column, 1, &err);
+    if (a_n != b_n)
         if (!err) err = "length";
 
     I info;
@@ -396,16 +404,16 @@ qml_ms(K x, K y) {
     if (!err && !info) {
         int i_1 = 1;
         double f_1 = 1;
-        if (b_n == 1)
-            dtrsv_(a_triangular > 0 ? "U" : "L", "N", "N",
+        if (b_m == 1)
+            dtrsv_(a_triangular > 0 ? "U" : "L", "T", "N",
                    &a_n, a, &a_n, b, &i_1); 
         else
-            dtrsm_("L", a_triangular > 0 ? "U" : "L", "N", "N",
+            dtrsm_("R", a_triangular > 0 ? "U" : "L", "N", "N",
                    &b_m, &b_n, &f_1, a, &a_n, b, &b_m);
     }
 
     free_F(a);
-    x = make_matrix(info ? NULL : b, b_m, b_m, b_n, b_column, 0);
+    x = make_matrix(info ? NULL : b, b_m, b_m, b_n, b_column, 1);
     free_F(b);
 
     return check_err(x, err);
@@ -418,11 +426,17 @@ qml_mevu(K x) {
     I n, info;
     S err = NULL;
 
-    F* a = take_square_matrix(x, &n, NULL, 0, &err);
+    // A v = lambda v <=> v* A' = lambda* v*
+    // Therefore, flip input, query left eigenvectors instead of right (which
+    // returns v, not v*), and apply conjugate transpose to eigenvalues. Then
+    // swap complex conjugate pairs of lambda and corresponding pairs of v to
+    // restore original order (positive imaginary part first). Combined, this is
+    // a no-op for lambda, leaving a swap for pairs of v.
+    F* a = take_square_matrix(x, &n, NULL, 1, &err);
 
     I lwork_query = -1;
     F maxwork;
-    dgeev_("N", "V", &n, NULL, &n, NULL, NULL,
+    dgeev_("V", "N", &n, NULL, &n, NULL, NULL,
            NULL, &n, NULL, &n, &maxwork, &lwork_query, &info);
     check_info(info, &err);
 
@@ -432,7 +446,7 @@ qml_mevu(K x) {
     F* ev = alloc_FF(&n, n, &err);
 
     info = -1;
-    dgeev_("N", "V", &n, a, &n, lr, li, NULL, &n, ev, &n, w, &lwork, &info);
+    dgeev_("V", "N", &n, a, &n, lr, li, ev, &n, NULL, &n, w, &lwork, &info);
     check_info(info, &err);
     free_W();
     free_F(a);
@@ -451,8 +465,8 @@ qml_mevu(K x) {
                 K q2 = qK(qK(x, 1), j+1) = ktn(0, n);
                 repeati (i, n) {
                     F a = ev[i + j*n], b = ev[i + (j+1)*n];
-                    qK(q1, i) = make_complex(a,  b);
-                    qK(q2, i) = make_complex(a, -b);
+                    qK(q1, i) = make_complex(a, -b); // swap pair like lambda
+                    qK(q2, i) = make_complex(a,  b);
                 }
                 j++;
             } else
@@ -474,12 +488,16 @@ qml_mchol(K x) {
     I n, info;
     S err = NULL;
 
-    F* a = take_square_matrix(x, &n, NULL, 0, &err);
+    // Operation requires A=A', so flipping input doesn't affect result.
+    // For output, find lower factor and flip it to get expected upper factor.
+    F* a = take_square_matrix(x, &n, NULL, 1, &err);
 
-    dpotrf_("U", &n, a, &n, &info);
+    // with "L" uses lower triangular part of a, which is upper triangular part
+    // of input
+    dpotrf_("L", &n, a, &n, &info);
     check_info(info, &err);
 
-    x = make_matrix(info ? NULL : a, n, n, n, make_upper, 0);
+    x = make_matrix(info ? NULL : a, n, n, n, make_upper, 1);
     free_F(a);
 
     return check_err(x, err);
@@ -535,6 +553,8 @@ mqr(K x, const int pivot) {
             qL(p, i) = ipiv[i] - 1;
         free_I(ipiv);
     } else
+        // This could be replaced by dgelqf (LQ factorization) to avoid flips,
+        // but then there would be less common code with pivoting version.
         if (lwork)
             dgeqrf_(&m, &n, a, &m,   tau, w, &lwork, &info);
     check_info(info, &err);
@@ -605,7 +625,8 @@ qml_msvd(K x) {
     I m, n, info;
     S err = NULL;
 
-    F* a = take_matrix(x, &m, &n, NULL, 0, &err);
+    // (U Sigma V)'=V'Sigma'U', so flip input and reverse and flip outputs
+    F* a = take_matrix(x, &m, &n, NULL, 1, &err);
     I min = min_i(m, n);
 
     I lwork_query = -1;
@@ -630,16 +651,16 @@ qml_msvd(K x) {
     free_F(a);
 
     x = ktn(0, 3);
-    qK(x, 0) = make_matrix(info ? NULL : u, m, m, m, make_general, 0);
-    qK(x, 1) = ktn(0, m);
-    repeati (j, m) {
-        K q = qK(qK(x, 1), j) = ktn(KF, n);
-        repeati (i, n)
-            qF(q, i) = 0;
-        if (j < n)
-            qF(q, j) = info ? nf : s[j];
+    qK(x, 0) = make_matrix(info ? NULL : vt, n, n, n, make_general, 1);
+    qK(x, 1) = ktn(0, n);
+    repeati (i, n) {
+        K q = qK(qK(x, 1), i) = ktn(KF, m);
+        repeati (j, m)
+            qF(q, j) = 0;
+        if (i < m)
+            qF(q, i) = info ? nf : s[i];
     }
-    qK(x, 2) = make_matrix(info ? NULL : vt, n, n, n, make_general, 1);
+    qK(x, 2) = make_matrix(info ? NULL : u, m, m, m, make_general, 0);
     free_F(vt);
     free_F(u);
     free_F(s);
