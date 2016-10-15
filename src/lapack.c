@@ -85,24 +85,34 @@ check_matrix(K x_, I* m, I* n, int* column, S* err) {
 }
 
 // copy data from output of check_matrix into pre-allocated array
+// flip=0: convert row-major x to column-major a, transposing data in memory
+// flip=1: don't transpose data in memory, which is faster but flips matrix
+// lda, m and n refer to output array shape regardless of flip
+// column=1: requires (flip?m:n)=1, so for flip=1 swap m and n from check_matrix
 static void
-copy_matrix(K x, F* a, I lda, I m, I n, int column)
+copy_matrix(K x, F* a, I lda, I m, I n, int column, int flip)
 {
     assert(a || !m || !n);
     if (column && x) {
+        if (flip)
+            swap_i(&m, &n);
         assert(n <= 1);
         copy_F(a, 0, qrF(x, m), 0, m);
     } else
         repeati (i, n)
-            repeati (j, m)
-                a[j + i*lda] = qF(qK(x, j), i);
+            if (!flip)
+                repeati (j, m)
+                    a[j + i*lda] = qF(qK(x, j), i);
+            else
+                copy_F(a, i*lda, qrF(qK(x, i), m), 0, m);
     if (x) q0(x);
 }
 
 
 // if triangular is set, returns 1 if matrix is upper, -1 if lower, else 0
+// upper and lower refer to output matrix shape regardless of flip
 static F*
-take_square_matrix(K x, I* n, int* triangular, S* err) {
+take_square_matrix(K x, I* n, int* triangular, int flip, S* err) {
     I m;
     x = check_matrix(x, &m, n, NULL, err);
     if (!likely(m == *n)) {
@@ -117,7 +127,7 @@ take_square_matrix(K x, I* n, int* triangular, S* err) {
         int upper = 1, lower = 1;
         repeati (i, *n)
             repeati (j, *n)
-                if ((a[j + i * *n] = qF(qK(x, j), i)))
+                if ((a[j + i * *n] = qF(qK(x, flip?i:j), flip?j:i)))
                     if (i < j) // non-zero below diagonal, so not upper
                         upper = 0;
                     else if (i > j) // non-zero above diagonal, so not lower
@@ -125,29 +135,35 @@ take_square_matrix(K x, I* n, int* triangular, S* err) {
         *triangular = upper ? 1 : lower ? -1 : 0;
         if (x) q0(x);
     } else
-        copy_matrix(x, a, *n, *n, *n, 0);
+        copy_matrix(x, a, *n, *n, *n, 0, flip);
 
     return a;
 }
 
 
+// m and n refer to output array shape regardless of flip
+// if column is set and true, (flip?m:n)=1
 // on error a = NULL and m = n = 0; the latter protects from functions here and
 // in LAPACK (e.g. dgeqrf) accessing a based on one of m and n != 0
 static F*
-take_matrix(K x, I* m, I* n, int* column, S* err) {
+take_matrix(K x, I* m, I* n, int* column, int flip, S* err) {
     x = check_matrix(x, m, n, column, err);
-    F* a = alloc_FF(n, *m, err); // works for vector too (*n==1)
-    if (!*n)
-        *m = 0;
-    copy_matrix(x, a, *m, *m, *n, column && *column);
+    F* a = alloc_FF(m, *n, err); // works for vector too (*n==1)
+    if (!*m)
+        *n = 0;
+    if (flip)
+        swap_i(m, n);
+    copy_matrix(x, a, *m, *m, *n, column && *column, flip);
+    // note: if this function ever rounds up lda, keep lda=1 for m=1 so that
+    // a column or row matrix can be flipped by swapping dimensions
     return a;
 }
 
 
 // if a is null matrix is filled with NaNs
+// column=make_upper/make_lower refers to output matrix layout (after flip)
 static K
 make_matrix(const F* a, I lda, I m, I n, int column, int flip) {
-    assert(!flip || column == make_general);
     if (flip)
         swap_i(&m, &n);
     // m and n now refer to x shape
@@ -192,11 +208,17 @@ make_matrix(const F* a, I lda, I m, I n, int column, int flip) {
         if (column == make_upper) {
             repeati (i, min_i(j, n))
                 qF(x, i) = 0;
-            repeati_ (i, j, n)
-                qF(x, i) = a[j + lda*i];
+            if (!flip)
+                repeati_ (i, j, n)
+                    qF(x, i) = a[j + lda*i];
+            else
+                copy_F(qrF(x, n), j, a, j + j*lda, max_i(0, n-j));
         } else {
-            repeati (i, min_i(j, n))
-                qF(x, i) = a[j + lda*i];
+            if (!flip)
+                repeati (i, min_i(j, n))
+                    qF(x, i) = a[j + lda*i];
+            else
+                copy_F(qrF(x, n), 0, a, j*lda, min_i(j, n));
             if (j < n)
                 qF(x, j) = 1;
             repeati_ (i, j+1, n)
@@ -254,7 +276,7 @@ qml_mdet(K x) {
     I n, info;
     S err = NULL;
 
-    F* a = take_square_matrix(x, &n, &triangular, &err);
+    F* a = take_square_matrix(x, &n, &triangular, 0, &err);
     F r = 1;
 
     if (!triangular) {
@@ -285,7 +307,7 @@ qml_minv(K x) {
     I n, info;
     S err = NULL;
 
-    F* a = take_square_matrix(x, &n, NULL, &err);
+    F* a = take_square_matrix(x, &n, NULL, 0, &err);
     I* ipiv = alloc_I(&n, &err);
 
     dgetrf_(&n, &n, a, &n, ipiv, &info);
@@ -323,8 +345,8 @@ qml_mm(K x, K y) {
     I a_m, a_n, b_m, b_n;
     S err = NULL;
 
-    F* a = take_matrix(x, &a_m, &a_n, NULL, &err);
-    F* b = take_matrix(y, &b_m, &b_n, &b_column, &err);
+    F* a = take_matrix(x, &a_m, &a_n, NULL, 0, &err);
+    F* b = take_matrix(y, &b_m, &b_n, &b_column, 0, &err);
     if (a_n != b_m)
         if (!err) err = "length";
 
@@ -358,11 +380,11 @@ qml_ms(K x, K y) {
     I a_n, b_m, b_n;
     S err = NULL;
 
-    F* a = take_square_matrix(x, &a_n, &a_triangular, &err);
+    F* a = take_square_matrix(x, &a_n, &a_triangular, 0, &err);
     if (!a_triangular)
         if (!err) err = "domain";
 
-    F* b = take_matrix(y, &b_m, &b_n, &b_column, &err);
+    F* b = take_matrix(y, &b_m, &b_n, &b_column, 0, &err);
     if (a_n != b_m)
         if (!err) err = "length";
 
@@ -396,7 +418,7 @@ qml_mevu(K x) {
     I n, info;
     S err = NULL;
 
-    F* a = take_square_matrix(x, &n, NULL, &err);
+    F* a = take_square_matrix(x, &n, NULL, 0, &err);
 
     I lwork_query = -1;
     F maxwork;
@@ -452,7 +474,7 @@ qml_mchol(K x) {
     I n, info;
     S err = NULL;
 
-    F* a = take_square_matrix(x, &n, NULL, &err);
+    F* a = take_square_matrix(x, &n, NULL, 0, &err);
 
     dpotrf_("U", &n, a, &n, &info);
     check_info(info, &err);
@@ -476,7 +498,7 @@ mqr(K x, const int pivot) {
     F* a = alloc_FF(&nm, m, &err);
     if (!nm)
         m = n = 0;
-    copy_matrix(x, a, m, m, n, 0);
+    copy_matrix(x, a, m, m, n, 0, 0);
 
     I min = min_i(m, n);
 
@@ -551,7 +573,7 @@ qml_mlup(K x) {
     I m, n, info;
     S err = NULL;
 
-    F* a = take_matrix(x, &m, &n, NULL, &err);
+    F* a = take_matrix(x, &m, &n, NULL, 0, &err);
 
     I min = min_i(m, n);
     I* ipiv = alloc_I(&min, &err);
@@ -583,7 +605,7 @@ qml_msvd(K x) {
     I m, n, info;
     S err = NULL;
 
-    F* a = take_matrix(x, &m, &n, NULL, &err);
+    F* a = take_matrix(x, &m, &n, NULL, 0, &err);
     I min = min_i(m, n);
 
     I lwork_query = -1;
@@ -697,8 +719,8 @@ mls(K x, K y, int equi) {
     I a_n, b_m, b_n, info;
     S err = NULL;
 
-    F* a = take_square_matrix(x, &a_n, NULL, &err);
-    F* b = take_matrix(y, &b_m, &b_n, &b_column, &err);
+    F* a = take_square_matrix(x, &a_n, NULL, 0, &err);
+    F* b = take_matrix(y, &b_m, &b_n, &b_column, 0, &err);
     if (a_n != b_m)
         if (!err) err = "length";
 
@@ -768,7 +790,7 @@ mlsq(K x, K y, int svd) {
     I a_m, a_n, b_m, b_n, info;
     S err = NULL;
 
-    F* a = take_matrix(x, &a_m, &a_n, NULL, &err);
+    F* a = take_matrix(x, &a_m, &a_n, NULL, 0, &err);
 
     // b has a_m rows in input but a_n rows in output, so allocate larger array
     y = check_matrix(y, &b_m, &b_n, &b_column, &err);
@@ -776,7 +798,7 @@ mlsq(K x, K y, int svd) {
     F* b = alloc_FF(&ldb, b_n, &err);
     if (!ldb)
         b_n = b_m = 0;
-    copy_matrix(y, b, ldb, b_m, b_n, b_column);
+    copy_matrix(y, b, ldb, b_m, b_n, b_column, 0);
 
     if (a_m != b_m) {
         ldb = a_m = b_m = 0; // avoid accessing uninitialized part of b
@@ -844,7 +866,9 @@ qml_mlsq(K x, K y) {
 
 // undocumented no-op function to benchmark matrix format conversion
 static K
-mnoop(K x, int square, int triangular_, int mark, int upper, int lower) {
+mnoop(K x, int square, int triangular_, int mark, int upper, int lower,
+      int flip)
+{
     int triangular = 0;
     int column = upper ? make_upper : lower ? make_lower : 0;
     I m, n;
@@ -852,10 +876,10 @@ mnoop(K x, int square, int triangular_, int mark, int upper, int lower) {
     F* a;
     if (square) {
         a = take_square_matrix(
-            x, &n, triangular_ ? &triangular : NULL, &err);
+            x, &n, triangular_ ? &triangular : NULL, flip, &err);
         m = n;
     } else
-        a = take_matrix(x, &m, &n, column ? NULL : &column, &err);
+        a = take_matrix(x, &m, &n, column ? NULL : &column, flip, &err);
 
     if (mark)
         repeati (i, n)
@@ -864,7 +888,7 @@ mnoop(K x, int square, int triangular_, int mark, int upper, int lower) {
                 *v = *v*10000 + ((j+1)*100 + (i+1))*(*v<0?-1:1);
             }
 
-    x = make_matrix(a, m, m, n, column, 0);
+    x = make_matrix(a, m, m, n, column, flip);
     free_F(a);
     if (triangular_) {
         K d = new_D();
@@ -882,20 +906,21 @@ static const struct optn noop_opt[] = {
     [2] = { "mark", 0 },
     [3] = { "upper", 0 },
     [4] = { "lower", 0 },
+    [5] = { "flip", 0 },
           { NULL }
 };
 
 K
 qml_mnoopx(K opts, K x) {
-    union optv v[] = { { 0 }, { 0 }, { 0 }, { 0 }, { 0 } };
+    union optv v[] = { { 0 }, { 0 }, { 0 }, { 0 }, { 0 }, { 0 } };
     if (!take_opt(opts, noop_opt, v))
         return krr("opt");
     if (!v[0].i && v[1].i || v[3].i && v[4].i)
         return krr("opt");
-    return mnoop(x, v[0].i, v[1].i, v[2].i, v[3].i, v[4].i);
+    return mnoop(x, v[0].i, v[1].i, v[2].i, v[3].i, v[4].i, v[5].i);
 }
 
 K
 qml_mnoop(K x) {
-    return mnoop(x, 0, 0, 0, 0, 0);
+    return mnoop(x, 0, 0, 0, 0, 0, 0);
 }

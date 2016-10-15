@@ -474,7 +474,7 @@ def test_mkron():
 def test_mnoop():
     output("""\
     mnoopx_triangular:{(::;``lower`upper?)@'
-        .qml.mnoopx[`mark`square`triangular;x]`x`triangular};""")
+        .qml.mnoopx[`mark`square`triangular,x;y]`x`triangular};""")
     def mark(A):
         return A.map(lambda i, j, v:
                      v*10000 + ((i+1)*100 + (j+1))*(-1 if v<0 else 1))
@@ -488,18 +488,24 @@ def test_mnoop():
             test("mnoop", A, A)
             copy_done += 1
         test("mnoopx[`mark", A, mark(A))
+        test("mnoopx[`mark`flip", A, mark(A.T).T)
         if A.m == 1:
             test("mnoopx[`mark", A.column(0), mark(A).column(0))
         if A.m == A.n:
             test("mnoopx[`mark`square", A, mark(A))
+            test("mnoopx[`mark`square`flip", A, mark(A.T).T)
             if A.take_lower() != A != A.take_upper():
-                test("mnoopx_triangular", A, (mark(A), 0))
+                test("mnoopx_triangular[`", A, (mark(A), 0))
+                test("mnoopx_triangular[`flip", A, (mark(A.T).T, 0))
             L = A.take_lower() if lower else A.take_upper()
             if L != A:
-                test("mnoopx_triangular", L, (mark(L), 2-lower))
+                test("mnoopx_triangular[`", L, (mark(L), 2-lower))
+                test("mnoopx_triangular[`flip", L, (mark(L.T).T, 1+lower))
             lower = not lower
         test("mnoopx[`mark`upper", A, mark(A).take_upper())
         test("mnoopx[`mark`lower", A, make_lower(mark(A)))
+        test("mnoopx[`mark`flip`upper", A, mark(A.T).T.take_upper())
+        test("mnoopx[`mark`flip`lower", A, make_lower(mark(A.T).T))
 
 
 def tests():
