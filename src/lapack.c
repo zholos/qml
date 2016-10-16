@@ -111,8 +111,10 @@ copy_matrix(K x, F* a, I lda, I m, I n, int column, int flip)
 
 // if triangular is set, returns 1 if matrix is upper, -1 if lower, else 0
 // upper and lower refer to output matrix shape regardless of flip
+// triangular without flip isn't used so isn't implemented
 static F*
 take_square_matrix(K x, I* n, int* triangular, int flip, S* err) {
+    assert(flip || !triangular);
     I m;
     x = check_matrix(x, &m, n, NULL, err);
     if (!likely(m == *n)) {
@@ -127,7 +129,7 @@ take_square_matrix(K x, I* n, int* triangular, int flip, S* err) {
         int upper = 1, lower = 1;
         repeati (i, *n)
             repeati (j, *n)
-                if ((a[j + i * *n] = qF(qK(x, flip?i:j), flip?j:i)))
+                if ((a[j + i * *n] = qF(qK(x, i), j)))
                     if (i < j) // non-zero below diagonal, so not upper
                         upper = 0;
                     else if (i > j) // non-zero above diagonal, so not lower
@@ -974,7 +976,7 @@ qml_mnoopx(K opts, K x) {
     union optv v[] = { { 0 }, { 0 }, { 0 }, { 0 }, { 0 }, { 0 } };
     if (!take_opt(opts, noop_opt, v))
         return krr("opt");
-    if (!v[0].i && v[1].i || v[3].i && v[4].i)
+    if (v[1].i && (!v[0].i || !v[5].i) || v[3].i && v[4].i)
         return krr("opt");
     return mnoop(x, v[0].i, v[1].i, v[2].i, v[3].i, v[4].i, v[5].i);
 }

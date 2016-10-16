@@ -512,12 +512,11 @@ def test_mnoop():
         if A.m == A.n:
             test("mnoopx[`mark`square", A, mark(A))
             test("mnoopx[`mark`square`flip", A, mark(A.T).T)
+            # triangular without flip isn't used so isn't implemented
             if A.take_lower() != A != A.take_upper():
-                test("mnoopx_triangular[`", A, (mark(A), 0))
                 test("mnoopx_triangular[`flip", A, (mark(A.T).T, 0))
             L = A.take_lower() if lower else A.take_upper()
             if L != A:
-                test("mnoopx_triangular[`", L, (mark(L), 2-lower))
                 test("mnoopx_triangular[`flip", L, (mark(L.T).T, 1+lower))
             lower = not lower
         test("mnoopx[`mark`upper", A, mark(A).take_upper())
