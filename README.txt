@@ -147,6 +147,9 @@ Constants and functions
   minv[matrix]    inverse
   mpinv[matrix]   pseudoinverse
   mm[A;B]         multiply
+  mmx[opt;A;B]    mm[] with options
+                   `lflip: flip A
+                   `rflip: flip B
   ms[A;B]         solve B=A mm X, A is triangular
   mev[matrix]     (eigenvalues; eigenvectors) sorted by decreasing modulus
   mchol[matrix]   Cholesky factorization upper matrix

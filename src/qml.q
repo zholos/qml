@@ -13,7 +13,7 @@ dll:`qml^dll^:`; / optional override
         `atan2`pow`hypot`fmod`beta`pgammar`pgammarc`ipgammarc`c2cdf`c2icdf,
             `stcdf`sticdf`pscdf`psicdf`smcdf`smicdf`mm`ms`mls`mlsq,
             `solve`min`root`mnoopx;
-        `pbetar`ipbetar`fcdf`ficdf`gcdf`gicdf`bncdf`bnicdf`mlsx`mlsqx,
+        `pbetar`ipbetar`fcdf`ficdf`gcdf`gicdf`bncdf`bnicdf`mmx`mlsx`mlsqx,
             `solvex`minx`rootx`conmin`line;
         `conminx`linex);
 
@@ -25,7 +25,7 @@ diag:{@[count[x]#abs[type x]$0;;:;]'[til count x;x]};
 mdim:{(count x;count x 0)};
 mdiag:{(n#x)@'til n:min mdim x};
 mrank:{sum not (d<eps*d[0]*max mdim x)|0=d:mdiag msvd[x]1};
-mpinv:{mm[x 2] flip mm[x 0]
+mpinv:{mmx[`rflip;x 2] mm[x 0]
     ?'[(s=0)|s<eps*s[0;0]*max mdim s;s*0;reciprocal s:(x:msvd x)1]};
 mev:{x@\:idesc sum each {x*x} first x:mevu x};
 mkron:{raze(raze'')(flip')x*\:\:y};

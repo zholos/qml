@@ -340,19 +340,21 @@ qml_minv(K x) {
 
 
 // Matrix multiply
-K
-qml_mm(K x, K y) {
-    int b_column;
+static K
+mm(K x, K y, int lflip, int rflip) {
+    int b_column = 0;
     I a_m, a_n, b_m, b_n;
     S err = NULL;
 
     // (AB)'=B'A', so flip inputs, multiply in reverse order, and flip output
+    // rflip can't accept a column because result wouldn't be a column
     F* a = take_matrix(x, &a_m, &a_n, NULL, 1, &err);
-    F* b = take_matrix(y, &b_m, &b_n, &b_column, 1, &err);
-    I m = b_m;
-    I n = a_n;
-    I k = a_m;
-    if (k != b_n)
+    F* b = take_matrix(y, &b_m, &b_n, rflip ? NULL : &b_column, 1, &err);
+    // option flips are applied to this: r(m * n) = b(b_m * b_n) a(a_m * a_n)
+    I m = rflip ? b_n : b_m;
+    I n = lflip ? a_m : a_n;
+    I k = lflip ? a_n : a_m;
+    if (k != (rflip ? b_m :b_n))
         if (!err) err = "length";
 
     F* r = alloc_FF(&m, n, &err);
@@ -362,11 +364,13 @@ qml_mm(K x, K y) {
         int i_1 = 1;
         double f_0 = 0, f_1 = 1;
         if (m == 1)
-            dgemv_("T", &a_m, &a_n, &f_1, a, &a_m, b, &i_1, &f_0, r, &i_1);
+            dgemv_(lflip?"N":"T", &a_m, &a_n, &f_1, a, &a_m, b, &i_1,
+                   &f_0, r, &i_1);
         else if (n == 1)
-            dgemv_("N", &b_m, &b_n, &f_1, b, &b_m, a, &i_1, &f_0, r, &i_1);
+            dgemv_(rflip?"T":"N", &b_m, &b_n, &f_1, b, &b_m, a, &i_1,
+                   &f_0, r, &i_1);
         else
-            dgemm_("N", "N", &m, &n, &k,
+            dgemm_(rflip?"T":"N", lflip?"T":"N", &m, &n, &k,
                    &f_1, b, &b_m, a, &a_m, &f_0, r, &m);
     }
 
@@ -376,6 +380,25 @@ qml_mm(K x, K y) {
     free_F(r);
 
     return check_err(x, err);
+}
+
+static const struct optn mm_opt[] = {
+    [0] = { "lflip", 0 },
+    [1] = { "rflip", 0 },
+          { NULL }
+};
+
+K
+qml_mmx(K opts, K x, K y) {
+    union optv v[] = { { 0 }, { 0 } };
+    if (!take_opt(opts, mm_opt, v))
+        return krr("opt");
+    return mm(x, y, v[0].i, v[1].i);
+}
+
+K
+qml_mm(K x, K y) {
+    return mm(x, y, 0, 0);
 }
 
 

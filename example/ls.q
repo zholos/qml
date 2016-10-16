@@ -17,12 +17,12 @@ b:.qml.nicdf .005+n?.99;
 / solve by QR factorization
 /   Ax=b  <=>  QRx=b  =>  Rx=Q'b (R is triangular, solved by back substitution)
 1"QR:        ";
-\t x1:.qml.ms[QR 1].qml.mm[flip (QR:.qml.mqr A)0]b;
+\t x1:.qml.ms[QR 1].qml.mmx[`lflip;(QR:.qml.mqr A)0;b];
 
 / solve by QR factorization with column pivoting
 /   APP'x=b  <=>  QRP'x=b  <=>  RP'x=Q'b  =>  Ry=Q'b, x=Py
 1"QRP:       ";
-\t x2:.qml.ms[QRP 1;.qml.mm[flip QRP 0]b]iasc(QRP:.qml.mqrp A)2;
+\t x2:.qml.ms[QRP 1;.qml.mmx[`lflip;QRP 0;b]]iasc(QRP:.qml.mqrp A)2;
 
 / solve by LUP factorization
 /   Ax=b  <=>  PAx=Pb  <=>  LUx=Pb  <=>  Ly=Pb, Ux=y (L and U are triangular)
@@ -32,12 +32,12 @@ b:.qml.nicdf .005+n?.99;
 / solve by Cholesky factorization
 /   Ax=b  =>  A'Ax=A'b  <=>  R'Rx=A'b  <=>  R'y=A'b, Rx=y (R is triangular)
 1"Cholesky:  ";
-\t x4:.qml.ms[R].qml.ms[flip R:.qml.mchol .qml.mm[A_;A]].qml.mm[A_:flip A]b;
+\t x4:.qml.ms[R].qml.ms[flip R:.qml.mchol .qml.mmx[`lflip;A;A]].qml.mmx[`lflip;A;b];
 
 / solve by singular value decomposition
 /   Ax=b  <=>  USV'x=b  =>  x=V inv(S)U'b (S is diagonal)
 1"SVD:       ";
-\t x5:.qml.mm[SVD 2].qml.mm[flip SVD 0;b]%.qml.mdiag(SVD:.qml.msvd A)1;
+\t x5:.qml.mm[SVD 2].qml.mmx[`lflip;SVD 0;b]%.qml.mdiag(SVD:.qml.msvd A)1;
 
 
 / solve with appropriate function

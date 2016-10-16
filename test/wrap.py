@@ -171,15 +171,22 @@ def test_lapack_type():
             length_error(left, arg)
 
     # f(m*n, n*p)
-    for func in "mm".split():
-        vector("(0 0;0 0.)", "0 0")
-        matrix("(0 0;0 0.)", "(0 0 0.;0 0 0)")
-        type_mn_pq("(0 0;0 0.)", "0 0")
-        length_mn_pq("(0 0;0 0.)", "0 0")
-        length_error("(0 0;0 0.)", "0 0 0")
-        length_error("(0 0;0 0.)", "(0 0;0 0;0 0)")
-        length_error("(0 0 0;0 0 0.)", "(0 0;0 0)")
-        vector("(0 0 0;0 0 0)", "0 0 0")
+    for func in "mm mmx`lflip mmx`rflip mmx`lflip`rflip".split():
+        lflip = "`lflip" in func; rflip = "`rflip" in func
+        if rflip:
+            type_error("(0 0;0 0.)", "0 0")
+        else:
+            vector("(0 0;0 0.)", "0 0")
+        matrix("(0 0;0 0.)", "flip"*rflip+"(0 0 0.;0 0 0)")
+        type_mn_pq("(0 0;0 0.)", "enlist "*rflip+"0 0")
+        length_mn_pq("(0 0;0 0.)", "enlist "*rflip+"0 0")
+        length_error("(0 0;0 0.)", "enlist "*rflip+"0 0 0")
+        length_error("(0 0;0 0.)", "flip"*rflip+"(0 0;0 0;0 0)")
+        length_error("flip"*lflip+"(0 0 0;0 0 0.)", "(0 0;0 0)")
+        if rflip:
+            matrix("flip"*lflip+"(0 0 0;0 0 0)", "enlist 0 0 0")
+        else:
+            vector("flip"*lflip+"(0 0 0;0 0 0)", "0 0 0")
 
     # f(n*n, n*p)
     for func in "ms mls mlsx`equi mlsx`flip mlsx`flip`equi".split():
@@ -300,10 +307,11 @@ def test_lapack_shape():
             if max(A, B) <= 2:
                 find()
 
-    func = "mm"; lflip = rmflip = rvskip = False
-    each("0h", lambda Am, An, Bm, Bn: An == Bm)
-    each("`type", zero_size=True)
-    each("`length", lambda Am, An, Bm, Bn: An != Bm)
+    for func in "mm mmx`lflip mmx`rflip mmx`lflip`rflip".split():
+        lflip = "`lflip" in func; rmflip = rvskip = "`rflip" in func
+        each("0h", lambda Am, An, Bm, Bn: An == Bm)
+        each("`type", zero_size=True)
+        each("`length", lambda Am, An, Bm, Bn: An != Bm)
 
     func = "ms"; lflip = rmflip = rvskip = False
     each("0h", lambda Am, An, Bm, Bn: Am == An == Bm,
@@ -338,6 +346,7 @@ def test_lapack_opt():
     def emit(func, *args):
         test("lapack_opt", tuple(map(qstr, (".qml."+func,) + args)), qstr("1b"))
 
+    emit("mmx", "`xflip", "0", "0")
     emit("mlsx", "`eqiu", "0", "0")
     emit("mlsqx", "`sdv", "0", "0")
     emit("mnoopx", "`lwer", "0")

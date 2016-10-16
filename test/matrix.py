@@ -367,16 +367,32 @@ def test_mpinv():
         if A.rank() < min(A.n, A.m):
             test("mpinv_rank_", A, A.rank())
 
-def test_mm():
+def test_mm(lflip, rflip):
+    routine = "mmx["+"`lflip"*lflip+"`rflip"*rflip if lflip or rflip else "mm"
     def emit(A, B, C):
-        test("mm", A, B, C)
-        if B.m == 1:
-            test("mm", A, B.column(0), C.column(0))
+        if lflip:
+            A = A.T
+        if rflip:
+            B = B.T
+        test(routine, A, B, C)
+        if not rflip and B.m == 1:
+            assert C.m == 1
+            test(routine, A, B.column(0), C.column(0))
 
     for A, B in itertools.product(subjects, repeat=2):
         if A.m == B.n:
             C = A * B
             emit(A, B, C)
+
+    if lflip and rflip:
+        for A, B in itertools.product(subjects, repeat=2):
+            if A.m == B.n and min(A.n, A.m, A.n, B.m) >= 2 and \
+                    A != B and A != A.T and B != B.T:
+                test("mmx[`lflip`rflip!2#1000000000", A.T, B.T, A * B,
+                     comment="use flags only in bool context")
+                break
+        else:
+            assert False
 
 def test_ms():
     def emit(A, B, X):
@@ -519,7 +535,9 @@ def tests():
     test_mrank()
     test_minv()
     test_mpinv()
-    test_mm()
+    for rflip in False, True:
+        for lflip in False, True:
+            test_mm(lflip, rflip)
     prec("1e-7")
     test_ms()
     for flip in False, True:
