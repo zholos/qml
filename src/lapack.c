@@ -127,13 +127,14 @@ take_square_matrix(K x, I* n, int* triangular, int flip, S* err) {
 
     if (triangular) {
         int upper = 1, lower = 1;
+        I lda = *n;
         repeati (i, *n)
             repeati (j, *n)
-                if ((a[j + i * *n] = qF(qK(x, i), j)))
-                    if (i < j) // non-zero below diagonal, so not upper
-                        upper = 0;
-                    else if (i > j) // non-zero above diagonal, so not lower
-                        lower = 0;
+                if ((a[j + i*lda] = qF(qK(x, i), j)))
+                    if (j < i)
+                        lower = 0; // non-zero above diagonal, so not lower
+                    else if (j > i)
+                        upper = 0; // non-zero below diagonal, so not upper
         *triangular = upper ? 1 : lower ? -1 : 0;
         if (x) q0(x);
     } else
