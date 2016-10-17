@@ -279,6 +279,7 @@ def test_poly():
 
 
 def tests():
+    reps(10000)
     prec("1e-9")
     test_mev()
     test_mchol()

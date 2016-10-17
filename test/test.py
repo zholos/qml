@@ -6,6 +6,7 @@ import libm
 import matrix
 import mpmat
 import conmax
+import wrap
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

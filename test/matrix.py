@@ -473,6 +473,7 @@ def test_mkron():
 
 
 def tests():
+    reps(10000)
     prec("1e-9")
     test_diag()
     test_mdiag()

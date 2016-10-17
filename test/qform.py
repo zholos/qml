@@ -268,11 +268,17 @@ output_file = None
 def output(s):
     (output_file or sys.stdout).write((s + "\n").decode("ascii"))
 
+_params = {}
+
 def prec(prec):
-    output("    prec:%s;" % prec)
+    if _params.get("prec") != prec:
+        _params["prec"] = prec
+        output("    prec:%s;" % prec)
 
 def reps(reps):
-    output("    reps:%d;" % reps)
+    if _params.get("reps") != reps:
+        _params["reps"] = reps
+        output("    reps:%d;" % reps)
 
 def test(name, *args, **kwargs):
     comment = kwargs.pop("comment", "")
@@ -282,7 +288,9 @@ def test(name, *args, **kwargs):
     args = [qform(x, **kwargs) for x in args]
     result = args.pop(-1)
 
-    if "[" in name:
+    if "[" == name[-1]:
+        call = "%s]" % ";".join(args)
+    elif "[" in name:
         call = ";%s]" % ";".join(args)
     elif len(args) == 1:
         call = " %s" % args[0]
