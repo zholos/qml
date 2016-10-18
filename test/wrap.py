@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+import functools
 
 from qform import *
 
@@ -83,96 +84,160 @@ def test_wrap():
     emit("F", "kcdf kicdf")
     test("kicdf", qstr("1e-9"), None)
 
-def test_lapack():
-    def emit(name, parts, funcs):
-        for func in funcs.split():
-            for part in parts:
-                test("lapack_%s[" % name, qstr(".qml."+func), part, qstr("1b"))
+def test_lapack_type():
+    """Check type handling in matrix functions."""
 
-    output("""\
-    lapack_nn_type:{
-        f:@[{x y;}x;;`$];
-        / too many calls in a single test makes debug_alloc loop slow
-        $[y=0;all(::)~'f each((0 0;0 0.);(0 0.;0 0));
-          y=1;all`type~'f each(0.;`;0 0.;();
-            (0.;0 0.);(0.;0 0);(0 0.;0.);(0 0;0.));
-          y=2;all`length~'f each(enlist 0 0.;
-            (0 0.;0 0 0.);(0 0;0 0 0.);(0 0 0.;0 0.);(0 0 0;0 0.));
-          '`]};""")
-    emit("nn_type", range(3), "mdet minv mev mchol")
+    # Most of the test suite checks numerical results, but here we check
+    # specific types, so arguments are specified as q strings.
 
+    # Check approximate output type to detect too few arguments being specified
+    # in test and function not being called at all (projection).
     output("""\
-    lapack_mn_type:{
-        f:@[{x y;}x;;`$];
-        $[y=0;all(::)~'f each((0 0 0;0 0 0.);(0 0 0.;0 0 0));
-          y=1;all`type~'f each(0.;`;0 0.;();enlist 0#0.;
-            (0.;0 0.);(0.;0 0);(0 0.;0.);(0 0;0.));
-          y=2;all`length~'f each(
-            (0 0.;0 0 0.);(0 0;0 0 0.);(0 0.;0 0.;0 0 0.);(0 0;0 0.;0 0 0.));
-          '`]};""")
-    emit("mn_type", range(3), "mqr mqrp mlup msvd")
+    lapack_mn_type:{[f;r;x]r~@[type f@;x;`$]};
+    lapack_mn_pq_type:{[f;r;x;y]r~@[type f .;(x;y);`$]};""")
 
-    output("""\
-    lapack_nn_np_type:{
-        f:.[{x[y;z];}x;;`$];
-        $[y=0;all(::)~'f each(((0 0;0 0.);0 0);(((0 0;0 0.);(0 0 0.;0 0 0))));
-          y=1;all`type~'f each(``;(`;0 0);((0 0;0 0.);`);
-            ((0 0;0 0.);enlist 0#0);(();0#0));
-          y=2;all`length~'f each(((0 0.;0 0 0.);0 0);((0 0;0 0.);(0 0;0 0 0.)));
-          y=3;all`length~'f each(((0 0;0 0.);0 0 0);((0 0;0 0.);(0 0;0 0;0 0));
-            ((0 0 0;0 0 0.);(0 0;0 0)));
-          / not for .qml.mm:
-          y=4;`length~f((0 0 0;0 0 0);0 0 0);
-          '`]};
-    lapack_mn_np_type:{
-        f:.[{x[y;z];}x;;`$];
-        $[y=0;(::)~f((0 0 0;0 0 0);0 0 0);
-          '`]};
-    lapack_0n_np_type:{
-        f:.[{x[y;z];}x;;`$];
-        $[y=0;all(::)~'f each
-            (((1 1;0 1);0 0);((0 1;0 0);0 0);((1 0;1 1);0 0);((0 0;1 0);0 0));
-          y=1;all`domain~'f each
-            (((1 1;1 1);0 0);((0 1;1 0);0 0);((1 0 1;1 1 0;0 0 1);0 0 0));
-          '`]};""")
-    emit("nn_np_type", range(4), "mm")
-    emit("mn_np_type", range(1), "mm")
-    emit("nn_np_type", range(5), "ms")
-    emit("0n_np_type", range(2), "ms")
-    emit("nn_np_type", range(5), "mls mlsx`equi")
+    def emit(result, *args):
+        test("lapack_mn_type" if len(args) == 1 else "lapack_mn_pq_type",
+             *map(qstr, (".qml."+func, result) + args + ("1b",)))
 
-    output("""\
-    lapack_mn_mp_type:{
-        f:.[{x[y;z];}x;;`$];
-        $[y=0;all(::)~'f each(((0 0;0 0);0 0);((0 0;0 0);(0 0;0 0)));
-          y=1;all(::)~'f each(((0 0;0 0;0 0);0 0 0);((0 0 0;0 0 0);0 0));
-          y=2;all(::)~'f each
-            (((0 0;0 0;0 0);(0 0;0 0;0 0));((0 0 0;0 0 0);(0 0;0 0)));
-          y=3;all`type~'f each(``;(`;0 0);((0 0;0 0);`));
-          y=4;all`length~'f each(((0 0;0 0 0);0 0);((0 0;0 0);(0 0;0 0 0)));
-          y=5;all`length~'f each
-            (((0 0 0;0 0 0);0 0 0);((0 0 0;0 0 0);(0 0;0 0;0 0)));
-            '`]};""")
-    emit("mn_mp_type", range(6), "mlsq mlsqx`svd")
+    # matrix and matrix tuple have same type here
+    scalar, vector, matrix, type_error, length_error, domain_error = (
+        functools.partial(emit, x)
+        for x in "-9h 9h 0h `type `length `domain".split())
 
-def test_poly():
-    output("""\
-    poly_type:{
-        f:@[{.qml.poly x;};;`$];
-        $[x=0;all(::)~'f each(1 0;(1.;0);(1;0.));
-          x=1;all`type~'f each(`;``;(0.;0 0;`;0.);0.;0;(0.;(0.;0 0.));
-            (1.;0 0.);(1 0;1);(1 0.;0 0.);(0.;());(0.;1#0.);(0.;3#0 0 0.));
-          x=2;all`length~'f each(0#0.;());
-          x=3;all`roots~'f each(0 1;0 0);
-          '`]};""")
-    for part in range(4):
-        test("poly_type", part, qstr("1b"))
+    # f(n*n)
+    for func in "mdet minv mev mchol".split():
+        (scalar if func=="mdet" else matrix)("(0 0;0 0.)")
+        (scalar if func=="mdet" else matrix)("(0 0.;0 0)")
+        type_error("0.")
+        type_error("`")
+        type_error("0 0.")
+        type_error("()")
+        type_error("(0.;0 0.)")
+        type_error("(0.;0 0)")
+        type_error("(0 0.;0.)")
+        type_error("(0 0;0.)")
+        length_error("enlist 0 0.")
+        length_error("(0 0.;0 0 0.)")
+        length_error("(0 0;0 0 0.)")
+        length_error("(0 0 0.;0 0.)")
+        length_error("(0 0 0;0 0.)")
+
+    # f(m*n)
+    for func in "mqr mqrp mlup msvd".split():
+        matrix("(0 0 0;0 0 0.)")
+        matrix("(0 0 0.;0 0 0)")
+        type_error("0.")
+        type_error("`")
+        type_error("0 0.")
+        type_error("()")
+        type_error("enlist 0#0.")
+        type_error("(0.;0 0.)")
+        type_error("(0.;0 0)")
+        type_error("(0 0.;0.)")
+        type_error("(0 0;0.)")
+        length_error("(0 0.;0 0 0.)")
+        length_error("(0 0;0 0 0.)")
+        length_error("(0 0.;0 0.;0 0 0.)")
+        length_error("(0 0;0 0.;0 0 0.)")
+
+    # f(m*n, n*p)
+    for func in "mm".split():
+        vector("(0 0;0 0.)", "0 0")
+        matrix("(0 0;0 0.)", "(0 0 0.;0 0 0)")
+        type_error("`", "`")
+        type_error("`", "0 0")
+        type_error("(0 0;0 0.)", "`")
+        type_error("(0 0;0 0.)", "enlist 0#0")
+        type_error("()", "0#0")
+        length_error("(0 0.;0 0 0.)", "0 0")
+        length_error("(0 0;0 0.)", "(0 0;0 0 0.)")
+        length_error("(0 0;0 0.)", "0 0 0")
+        length_error("(0 0;0 0.)", "(0 0;0 0;0 0)")
+        length_error("(0 0 0;0 0 0.)", "(0 0;0 0)")
+        vector("(0 0 0;0 0 0)", "0 0 0")
+
+    # f(n*n, n*p)
+    for func in "ms mls mlsx`equi".split():
+        vector("(0 0;0 0.)", "0 0")
+        matrix("(0 0;0 0.)", "(0 0 0.;0 0 0)")
+        type_error("`", "`")
+        type_error("`", "0 0")
+        type_error("(0 0;0 0.)", "`")
+        type_error("(0 0;0 0.)", "enlist 0#0")
+        type_error("()", "0#0")
+        length_error("(0 0.;0 0 0.)", "0 0")
+        length_error("(0 0;0 0.)", "(0 0;0 0 0.)")
+        length_error("(0 0;0 0.)", "0 0 0")
+        length_error("(0 0;0 0.)", "(0 0;0 0;0 0)")
+        length_error("(0 0 0;0 0 0.)", "(0 0;0 0)")
+        length_error("(0 0 0;0 0 0)", "0 0 0")
+
+        # ms requires a triangular matrix
+        if func == "ms":
+            vector("(1 1;0 1)", "0 0")
+            vector("(0 1;0 0)", "0 0")
+            vector("(1 0;1 1)", "0 0")
+            vector("(0 0;1 0)", "0 0")
+            domain_error("(1 1;1 1)", "0 0")
+            domain_error("(0 1;1 0)", "0 0")
+            domain_error("(1 0 1;1 1 0;0 0 1)", "0 0 0")
+
+    # f(m*n, m*p)
+    for func in "mlsq mlsqx`svd".split():
+        vector("(0 0;0 0)", "0 0")
+        matrix("(0 0;0 0)", "(0 0;0 0)")
+        vector("(0 0;0 0;0 0)", "0 0 0")
+        vector("(0 0 0;0 0 0)", "0 0")
+        matrix("(0 0;0 0;0 0)", "(0 0;0 0;0 0)")
+        matrix("(0 0 0;0 0 0)", "(0 0;0 0)")
+        type_error("`", "`")
+        type_error("`", "0 0")
+        type_error("(0 0;0 0)", "`")
+        length_error("(0 0;0 0 0)", "0 0")
+        length_error("(0 0;0 0)", "(0 0;0 0 0)")
+        length_error("(0 0 0;0 0 0)", "0 0 0")
+        length_error("(0 0 0;0 0 0)", "(0 0;0 0;0 0)")
 
 def test_lapack_opt():
     output("""\
-    lapack_opt:{
-        all`opt~'@[get;;`$]each((.qml.mlsx;`eqiu;0;0);(.qml.mlsqx;`sdv;0;0))};""")
-    test("lapack_opt", qstr("1b"))
+    lapack_opt:{`opt~@[get;x;`$]};""")
+
+    def emit(func, *args):
+        test("lapack_opt", tuple(map(qstr, (".qml."+func,) + args)), qstr("1b"))
+
+    emit("mlsx", "`eqiu", "0", "0")
+    emit("mlsqx", "`sdv", "0", "0")
+
+def test_poly():
+    output("""\
+    poly_type:{x~@[type .qml.poly@;y;`$]};""")
+
+    def emit(*args):
+        test("poly_type", *map(qstr, args + ("1b",)))
+
+    real, type_error, length_error, roots_error = (
+        functools.partial(emit, x) for x in "9h `type `length `roots".split())
+
+    real("1 0")
+    real("(1.;0)")
+    real("(1;0.)")
+    type_error("`")
+    type_error("``")
+    type_error("(0.;0 0;`;0.)")
+    type_error("0.")
+    type_error("0")
+    type_error("(0.;(0.;0 0.))")
+    type_error("(1.;0 0.)")
+    type_error("(1 0;1)")
+    type_error("(1 0.;0 0.)")
+    type_error("(0.;())")
+    type_error("(0.;1#0.)")
+    type_error(" (0.;3#0 0 0.)")
+    length_error("0#0.")
+    length_error("()")
+    roots_error("0 1")
+    roots_error("0 0")
 
 
 def tests():
@@ -180,9 +245,9 @@ def tests():
     prec("1e-3")
     test_const()
     test_wrap()
-    test_lapack()
-    test_poly()
+    test_lapack_type()
     test_lapack_opt()
+    test_poly()
 
 if __name__ == "__main__":
     tests()
