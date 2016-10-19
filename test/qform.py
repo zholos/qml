@@ -6,7 +6,7 @@ import decimal
 from decimal import Decimal
 from types import NoneType
 import sympy as sp
-import sympy.mpmath as mp
+import mpmath as mp
 from sympy import S
 
 decimal.getcontext().prec = 50

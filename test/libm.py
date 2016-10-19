@@ -3,7 +3,7 @@ from __future__ import division
 
 import sympy as sp
 import sympy.stats as st
-import sympy.mpmath as mp
+import mpmath as mp
 from sympy import S, pi, oo, FiniteSet, ProductSet, Interval
 mpf = mp.mpf
 
@@ -194,7 +194,8 @@ def test_prob():
             y = cdf(*arg)
             if isinstance(y, mpf):
                 e = sp.nsimplify(y, rational=True)
-                if e.is_Rational and e.q <= 1000 and mp.almosteq(e, y, 1e-25):
+                if e.is_Rational and e.q <= 1000 and \
+                        mp.almosteq(mp.mpf(e), y, 1e-25):
                     y = e
             else:
                 y = N(y)
