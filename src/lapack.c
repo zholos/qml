@@ -741,8 +741,10 @@ mlsq(K x, K y, int svd) {
     F* a = take_matrix(x, &a_m, &a_m, &a_n, NULL, &err);
     I ldb = a_n;
     F* b = take_matrix(y, &ldb, &b_m, &b_n, &b_column, &err);
-    if (a_m != b_m)
+    if (a_m != b_m) {
+        ldb = a_m = b_m = 0; // avoid accessing uninitialized part of b
         if (!err) err = "length";
+    }
 
     I lwork_query = -1;
     I liwork = wi; // bug0038 in LAPACK <3.2.2 does not initialize this
@@ -765,8 +767,8 @@ mlsq(K x, K y, int svd) {
             a_n = 0;
         I* iw = alloc_I(&liwork, &err);
 
-        // iw access pattern is non-trivial, so don't call if error
-        if (!err)
+        // can't convey failed alloc of iw (liwork=0), so simply skip the call
+        if (liwork)
             dgelsd_(&a_m, &a_n, &b_n, a, &a_m, b, &ldb,
                     s, &rcond, &rank, w, &lwork, iw, &info);
         free(iw);
