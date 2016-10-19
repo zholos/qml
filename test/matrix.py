@@ -1,9 +1,8 @@
 #!/usr/bin/env python2
 from __future__ import division
 
+import math, operator, itertools
 from fractions import Fraction
-import math
-import operator
 
 from qform import *
 
@@ -367,11 +366,10 @@ def test_mm():
         if B.m == 1:
             test("mm", A, B.column(0), C.column(0))
 
-    for A in subjects:
-        for B in subjects:
-            if A.m == B.n:
-                C = A * B
-                emit(A, B, C)
+    for A, B in itertools.product(subjects, repeat=2):
+        if A.m == B.n:
+            C = A * B
+            emit(A, B, C)
 
 def test_ms():
     def emit(A, B, X):
@@ -382,25 +380,24 @@ def test_ms():
     single_done = 0
     zero_done = 0
     random = Random()
-    for A in subjects:
-        for B in subjects:
-            if A.m == A.n == B.n:
-                if A.n == 1:
-                    if single_done == 3:
-                        continue
-                    single_done += 1
+    for A, B in itertools.product(subjects, repeat=2):
+        if A.m == A.n == B.n:
+            if A.n == 1:
+                if single_done == 3:
+                    continue
+                single_done += 1
 
-                L = [A.take_lower(), A.take_upper()]
-                if L[0] == L[1]:
-                    L.pop()
-                i = random(A.n)
-                for Z in L:
-                    emit(Z, B, Z.subst_solve(B))
-                    if zero_done == 10:
-                        continue
-                    zero_done += 1
-                    Z[i][i] = 0
-                    emit(Z, B, Matrix.null_matrix(B.n, B.m))
+            L = [A.take_lower(), A.take_upper()]
+            if L[0] == L[1]:
+                L.pop()
+            i = random(A.n)
+            for Z in L:
+                emit(Z, B, Z.subst_solve(B))
+                if zero_done == 10:
+                    continue
+                zero_done += 1
+                Z[i][i] = 0
+                emit(Z, B, Matrix.null_matrix(B.n, B.m))
 
 def test_mls(equi):
     routine = "mlsx[`equi" if equi else "mls"
@@ -415,28 +412,27 @@ def test_mls(equi):
     single_done = 0
     random = Random()
 
-    for A in subjects:
-        for B in subjects:
-            if A.m == A.n == B.n:
-                if A.n == 1:
-                    if single_done == 3:
-                        continue
-                    single_done += 1
+    for A, B in itertools.product(subjects, repeat=2):
+        if A.m == A.n == B.n:
+            if A.n == 1:
+                if single_done == 3:
+                    continue
+                single_done += 1
 
-                if A.det() != 0:
-                    X = A.inverse() * B
-                else:
-                    X = Matrix.null_matrix(B.n, B.m)
+            if A.det() != 0:
+                X = A.inverse() * B
+            else:
+                X = Matrix.null_matrix(B.n, B.m)
 
-                emit(A, B, X)
+            emit(A, B, X)
 
-                if equi and A.det() != 0 and A.m >= 3 and A.m <= 5:
-                    L, R = [Matrix.diagonal_matrix(random.permute(
-                            [1000 ** i for i in range(A.m)])) for i in range(2)]
+            if equi and A.det() != 0 and A.m >= 3 and A.m <= 5:
+                L, R = [Matrix.diagonal_matrix(random.permute(
+                        [1000 ** i for i in range(A.m)])) for i in range(2)]
 
-                    emit(L * A,     L * B,               X)
-                    emit(    A * R,     B, R.inverse() * X)
-                    emit(L * A * R, L * B, R.inverse() * X)
+                emit(L * A,     L * B,               X)
+                emit(    A * R,     B, R.inverse() * X)
+                emit(L * A * R, L * B, R.inverse() * X)
 
 def test_mlsq(svd):
     routine = "mlsqx[`svd" if svd else "mlsq"
@@ -446,23 +442,22 @@ def test_mlsq(svd):
             test(routine, A, B.column(0), X.column(0))
 
     single_done = 0
-    for A in subjects:
-        for B in subjects:
-            if A.n == B.n:
-                if A.n == 1:
-                    if single_done == 3:
-                        continue
-                    single_done += 1
+    for A, B in itertools.product(subjects, repeat=2):
+        if A.n == B.n:
+            if A.n == 1:
+                if single_done == 3:
+                    continue
+                single_done += 1
 
-                X = A.pseudo_inverse() * B
+            X = A.pseudo_inverse() * B
 
-                if not svd and A.rank() != min(A.n, A.m):
-                    # Replace matrix by more-obviously-rank-deficient one
-                    # as routine is poor at detecting them.
-                    A = Matrix.diagonal_matrix([1] * (A.n - 1) + [0]) * A
-                    X = Matrix.null_matrix(B.n, B.m)
+            if not svd and A.rank() != min(A.n, A.m):
+                # Replace matrix by more-obviously-rank-deficient one
+                # as routine is poor at detecting them.
+                A = Matrix.diagonal_matrix([1] * (A.n - 1) + [0]) * A
+                X = Matrix.null_matrix(B.n, B.m)
 
-                emit(A, B, X)
+            emit(A, B, X)
 
 def test_mkron():
     output("""\
