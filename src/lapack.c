@@ -676,7 +676,7 @@ mls(K x, K y, int equi) {
 
     if (equi) {
         F* bi = b;
-        b     = alloc_FF(&a_n, b_n, &err);
+        b     = alloc_FF(&b_m, b_n, &err);
 
         F* af = alloc_FF(&a_n, a_n, &err);
         F* r  = alloc_F (&a_n,      &err);
