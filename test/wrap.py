@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-import functools
+import functools, itertools
 
 from qform import *
 
@@ -223,6 +223,112 @@ def test_lapack_type():
         length_error("(0 0 0;0 0 0)", "0 0 0")
         length_error("(0 0 0;0 0 0)", "(0 0;0 0;0 0)")
 
+def test_lapack_shape():
+    """Check matrix functions for large input data and mismatched shapes."""
+
+    # use decimal digits that have a non-zero binary pattern to make any
+    # overwrites more noticeable
+    output("""\
+    lapack_mn_pq_shape:{[f;r;x;y]r~@[type f .;(x#.1;y#-.9);`$]};
+    lapack_0n_pq_shape:{[f;r;t;x;y]r~@[type f .;(.1*(t\:). til each x;y#-.9);`$]};""")
+
+    # use odd sizes to check for block algorithm overread
+    # two different small sizes needed to create small buffers and large sizes
+    # needed to potentially overwrite them
+    sizes = [0, 1, 3, 29, 47, 101, 151, 383, 1009, 2551]
+
+    # extra values to detect if above are insufficient to satisfy conditions
+    sizes += [10**6, 10**9, 10**18, 10**21]
+
+    # always choose the smallest matrix that fits the requirements
+    combinations = list(sorted(
+        itertools.product(sizes, repeat=4),
+        key=lambda x: (min(x), x[0]*x[1]+x[2]*x[3], x)))
+
+    # high-level matrix shapes; some referred to by index below
+    shapes = (
+        lambda m, n: 0 == n and m > 10, # zero-width
+        lambda m, n: 0 == m and n > 10, # zero-height
+        lambda m, n: min(m, n) and max(m, n) <= 3, # tiny (easily overflown)
+        lambda m, n: 1 == n and m > 10, # column (for right argument)
+        lambda m, n: 1 < n and m > n * 10, # tall
+        lambda m, n: 1 < m and n > m * 10, # wide
+        lambda m, n: 10 < m == n # square
+    )
+
+    def each(result, cond=None, zero_size=False, triangulars=None):
+        def emit(Am, An, Bm, Bn):
+            if Am == 0 or Bm == 0:
+                return # can't render zero-height with specific width in q
+            if triangulars is None:
+                test("lapack_mn_pq_shape", qstr(".qml."+func),
+                     qstr("9h" if "0h" == result and B == 3 else result),
+                     qstr("%s %s" % (Am, An)),
+                     qstr("%s %s" % (Bm, Bn)) if B != 3 else Bm,
+                     qstr("1b"))
+            else:
+                for triangular in triangulars.split():
+                    test("lapack_0n_pq_shape", qstr(".qml."+func),
+                         qstr("9h" if "0h" == result and B == 3 else result),
+                         qstr(triangular),
+                         qstr("%s %s" % (Am, An)),
+                         qstr("%s %s" % (Bm, Bn)) if B != 3 else Bm,
+                         qstr("1b"))
+
+        def find(relative=None):
+            for Am, An, Bm, Bn in combinations:
+                if not shapes[A](Am, An) or not shapes[B](Bm, Bn):
+                    continue
+                if cond is not None and not cond(Am, An, Bm, Bn):
+                    continue
+                if relative is not None and not relative(Am, An, Bm, Bn):
+                    continue
+                assert max(Am, An, Bm, Bn) < 10**6, "add more sizes"
+                emit(Am, An, Bm, Bn)
+                break
+
+        for A, B in itertools.product(range(len(shapes)), repeat=2):
+            if A == 3:
+                continue # column vector only for right argument
+            if (min(A, B) <= 1) != bool(zero_size):
+                continue
+            # try both relative buffer sizes: left larger and right larger
+            if A > 2:
+                find(relative=lambda Am, An, Bm, Bn: Am*An > 3*Bm*Bn)
+            if B > 2:
+                find(relative=lambda Am, An, Bm, Bn: Am*An*3 < Bm*Bn)
+            if max(A, B) <= 2:
+                find()
+
+    func = "mm"
+    each("0h", lambda Am, An, Bm, Bn: An == Bm)
+    each("`type", zero_size=True)
+    each("`length", lambda Am, An, Bm, Bn: An != Bm)
+
+    func = "ms"
+    each("0h", lambda Am, An, Bm, Bn: Am == An == Bm,
+         triangulars=">= <=")
+    each("`domain", lambda Am, An, Bm, Bn: Am == An == Bm > 1,
+         triangulars="<>")
+    each("`type", lambda Am, An, Bm, Bn: Am == An, zero_size=True,
+         triangulars=">= <=")
+    each("`length", lambda Am, An, Bm, Bn: Am == An != Bm,
+         triangulars=">= <=")
+    each("`length", lambda Am, An, Bm, Bn: Bm == Am != An,
+         triangulars=">= <=")
+
+    for func in "mls mlsx`equi".split():
+        each("0h", lambda Am, An, Bm, Bn: Am == An == Bm)
+        each("`type", lambda Am, An, Bm, Bn: Am == An, zero_size=True)
+        each("`length", lambda Am, An, Bm, Bn: Am == An != Bm)
+        each("`length", lambda Am, An, Bm, Bn: Bm == Am != An)
+
+    for func in "mlsq mlsqx`svd".split():
+        # actual operation is slow so skip largest valid result (0h) tests
+        each("0h", lambda Am, An, Bm, Bn: Am == Bm and An < 1000)
+        each("`type", zero_size=True)
+        each("`length", lambda Am, An, Bm, Bn: Am != Bm)
+
 def test_lapack_opt():
     output("""\
     lapack_opt:{`opt~@[get;x;`$]};""")
@@ -270,6 +376,7 @@ def tests():
     test_const()
     test_wrap()
     test_lapack_type()
+    test_lapack_shape()
     test_lapack_opt()
     test_poly()
 
