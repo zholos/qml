@@ -53,7 +53,7 @@ take_square_matrix(K x_, I* n, int* triangular, S* err) {
     }
 
     F* a = alloc_FF(n, *n, err);
-    repeat (j, *n)
+    repeati (j, *n)
         if (qn(qK(x, j)) != *n) {
             *n = 0;
             if (!*err) *err = "length";
@@ -61,8 +61,8 @@ take_square_matrix(K x_, I* n, int* triangular, S* err) {
 
     if (triangular) {
         int upper = 1, lower = 1;
-        repeat (j, *n)
-            repeat (i, *n)
+        repeati (j, *n)
+            repeati (i, *n)
                 if ((a[j + i * *n] = qF(qK(x, j), i)))
                     if (i < j) // non-zero below diagonal, so not upper
                         upper = 0;
@@ -70,8 +70,8 @@ take_square_matrix(K x_, I* n, int* triangular, S* err) {
                         lower = 0;
         *triangular = upper ? 1 : lower ? -1 : 0;
     } else
-        repeat (j, *n)
-            repeat (i, *n)
+        repeati (j, *n)
+            repeati (i, *n)
                 a[j + i * *n] = qF(qK(x, j), i);
 
     if (x) q0(x);
@@ -106,7 +106,7 @@ take_matrix(K x_, I* ldr, I* m, I* n, int* column, S* err) {
         *m = *n = 0;
         if (!*err) *err = "type";
     }
-    repeat (j, *m)
+    repeati (j, *m)
         if (qn(qK(x, j)) != *n) {
             *m = *n = 0;
             if (!*err) *err = "length";
@@ -117,8 +117,8 @@ take_matrix(K x_, I* ldr, I* m, I* n, int* column, S* err) {
     F* a = alloc_FF(&nm, *ldr, err);
     if (!nm)
         *m = *n = 0;
-    repeat (j, *m)
-        repeat (i, *n)
+    repeati (j, *m)
+        repeati (i, *n)
             a[j + i * *ldr] = qF(qK(x, j), i);
     if (x) q0(x);
     return a;
@@ -136,7 +136,7 @@ make_matrix(const F* a, I ldr, I m, I n, int column) {
         if (!a)
             return make_matrix(NULL, 0, n, m, 0);
         K r = ktn(0, n);
-        repeat (i, n)
+        repeati (i, n)
             qK(r, i) = make_F(a + i*ldr, m);
         return r;
     }
@@ -145,9 +145,9 @@ make_matrix(const F* a, I ldr, I m, I n, int column) {
         if (!a)
             return make_matrix(NULL, 0, m, n, 0);
         K r = ktn(0, m);
-        repeat (j, m) {
+        repeati (j, m) {
             K x = ktn(KF, n);
-            repeat (i, n)
+            repeati (i, n)
                 if (column == make_upper)
                     qF(x, i) = i < j ? 0 : a[j + ldr*i];
                 else
@@ -169,15 +169,15 @@ make_matrix(const F* a, I ldr, I m, I n, int column) {
     if (a)
         // Most common case
         // TODO: cache-optimized transpose
-        repeat (j, m) {
+        repeati (j, m) {
             K x = ktn(KF, n);
-            repeat (i, n)
+            repeati (i, n)
                 qF(x, i) = a[j + i*ldr];
             qK(r, j) = x;
         }
     else {
         K x = make_F_null(n);
-        repeat (j, m)
+        repeati (j, m)
             qK(r, j) = r1(x);
         q0(x);
     }
@@ -201,15 +201,15 @@ make_complex(F a, F b) {
 // a and b can be null
 // returns xt==0 when complex
 static K
-make_complex_vector(const F* a, const F* b, int n) {
+make_complex_vector(const F* a, const F* b, I n) {
     if (b)
-        repeat (i, n)
+        repeati (i, n)
             if (!(b[i] == 0))
                 goto complex;
 
     if (a) {
         K x = ktn(KF, n);
-        repeat (i, n)
+        repeati (i, n)
             qF(x, i) = a[i];
         return x;
     } else
@@ -217,7 +217,7 @@ make_complex_vector(const F* a, const F* b, int n) {
 
 complex:;
     K x = ktn(0, n);
-    repeat (i, n)
+    repeati (i, n)
         qK(x, i) = make_complex(a[i], b[i]);
     return x;
 }
@@ -241,13 +241,13 @@ qml_mdet(K x) {
         check_info(info, &err);
         // info>0 indicates singularity, but we don't treat this specially
 
-        repeat (i, n)
+        repeati (i, n)
             if (ipiv[i]-1 != i)
                 r = -r;
         free_I(ipiv);
     }
 
-    repeat (i, n)
+    repeati (i, n)
         r *= a[i + i*n];
     free_F(a);
 
@@ -400,11 +400,11 @@ qml_mevu(K x) {
     else {
         assert(!info);
         qK(x, 1) = ktn(0, n);
-        repeat (j, n) {
+        repeati (j, n) {
             if (li[j] != 0 && j+1 < n) {
                 K q1 = qK(qK(x, 1), j)   = ktn(0, n);
                 K q2 = qK(qK(x, 1), j+1) = ktn(0, n);
-                repeat (i, n) {
+                repeati (i, n) {
                     F a = ev[i + j*n], b = ev[i + (j+1)*n];
                     qK(q1, i) = make_complex(a,  b);
                     qK(q2, i) = make_complex(a, -b);
@@ -474,12 +474,12 @@ mqr(K x, const int pivot) {
         if (!n)
             min = 0;
 
-        repeat (i, n)
+        repeati (i, n)
             ipiv[i] = 0;
         dgeqp3_(&m, &n, a, &m, ipiv, tau, w, &lwork, &info);
 
         p = ktn(KL, n);
-        repeat (i, n)
+        repeati (i, n)
             qL(p, i) = ipiv[i] - 1;
         free_I(ipiv);
     } else
@@ -535,9 +535,9 @@ qml_mlup(K x) {
     qK(x, 0) = make_matrix(a, m, m, min, make_lower);
     qK(x, 1) = make_matrix(a, m, min, n, make_upper);
     L* q = kL(qK(x, 2) = ktn(KL, m));
-    repeat (i, m)
+    repeati (i, m)
         q[i] = i;
-    repeat (i, min)
+    repeati (i, min)
         swap_l(q + i, q + ipiv[i]-1);
 
     free_I(ipiv);
@@ -580,9 +580,9 @@ qml_msvd(K x) {
     x = ktn(0, 3);
     qK(x, 0) = make_matrix(info ? NULL : u, m, m, m, 0);
     qK(x, 1) = ktn(0, m);
-    repeat (j, m) {
+    repeati (j, m) {
         K q = qK(qK(x, 1), j) = ktn(KF, n);
-        repeat (i, n)
+        repeati (i, n)
             qF(q, i) = 0;
         if (j < n)
             qF(q, j) = info ? nf : s[j];
@@ -632,10 +632,10 @@ qml_poly(K x_) {
     F* cm = alloc_FF(&n, n, &err);
 
     /* make companion matrix */
-    repeat (i, n-1)
-        repeat (j, n)
+    repeati (i, n-1)
+        repeati (j, n)
             cm[j + n*i] = j == i + 1;
-    repeat (j, n)
+    repeati (j, n)
         cm[j + n*(n-1)] = qF(x, n-j) / -lc;
 
     dgeev_("N", "N", &n, cm, &n, lr, li, NULL, &n, NULL, &n, w, &lwork, &info);
@@ -821,8 +821,8 @@ mnoop(K x, int square, int triangular_, int mark, int upper, int lower) {
         a = take_matrix(x, &m, &m, &n, column ? NULL : &column, &err);
 
     if (mark)
-        repeat (i, n)
-            repeat (j, m) {
+        repeati (i, n)
+            repeati (j, m) {
                 F* v = &a[j+i*m];
                 *v = *v*10000 + ((j+1)*100 + (i+1))*(*v<0?-1:1);
             }

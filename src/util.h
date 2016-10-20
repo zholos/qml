@@ -71,6 +71,8 @@
 // n may be negative
 #define repeat(i, n) \
     for (L i = 0, n__##i = (n); i < n__##i; i++)
+#define repeati(i, n) \
+    for (I i = 0, n__##i = (n); i < n__##i; i++)
 
 
 static inline int
