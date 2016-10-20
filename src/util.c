@@ -122,8 +122,10 @@ convert_F(K x) {
                 qF(r, i) = qf(qK(x, i));
             else if (compatible_f(qK(x, i)))
                 qF(r, i) = convert_f(qK(x, i));
-            else
-                return q0(r);
+            else {
+                q0(r);
+                return NULL;
+            }
         break;
     default:
         return NULL;
@@ -148,8 +150,10 @@ copy:;
     int failed = 0;
     repeat (j, xn)
         failed |= !likely(qK(r, j) = convert_F(qK(x, j)));
-    if (failed)
-        return q0(r);
+    if (failed) {
+        q0(r);
+        return NULL;
+    }
     return r;
 }
 
@@ -183,8 +187,10 @@ copy:;
     I vector = 1;
     repeat (i, qn(x)) {
         K v = convert_FFF(qK(x, i));
-        if (!v)
-            return q0(r);
+        if (!v) {
+            q0(r);
+            return NULL;
+        }
         assert(qt(v) == -KF || qt(v) == KF || qt(v) == 0);
         vector &= qt(v) == -KF;
         qK(r, i) = v;

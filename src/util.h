@@ -48,7 +48,7 @@
 #define qE(x, i) qT__((x), (i), KE, E)
 #define qF(x, i) qT__((x), (i), KF, F)
 
-#define q0(x) (assert((x)), r0((x)), (x) = 0, NULL)
+#define q0(x) (assert((x)), r0((x)), (x) = NULL, (void)0)
 
 
 #if __GNUC__ >= 3
