@@ -28,9 +28,13 @@ do_configure:
 	echo RANLIB='$(RANLIB)'                        >>work/make.inc
 	
 ifeq ($(BUILD_BLAS),)
+ifeq ($(BUILD_OPENBLAS),)
 	echo BLASLIB='$(LIBS_BLAS)'                    >>work/make.inc
+else
+	echo BLASLIB=../../../../lib/libopenblas.a     >>work/make.inc
 endif
-	
+endif
+
 # Test routines use huge arrays that overflow the stack with -frecursive.
 # Alternative fix is to increase stack size.
 	echo OPTS_TESTING='$(FLAGS) $(FFLAGS_NTHREAD)' >>work/make.inc

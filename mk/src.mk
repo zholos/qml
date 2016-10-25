@@ -13,9 +13,16 @@ PKG_INCLUDES := $(addprefix ../include/, \
 # Don't use -L../lib -lprob etc. to avoid unintentionally linking to possibly
 # incompatible system libraries if the libraries we built are missing.
 
+# OpenBLAS has custom implementations of some LAPACK routines, so link
+# libopenblas before (and after) liblapack. The same approach doesn't work below
+# for dynamically-linked system libraries, but that should be handled by the
+# system (e.g. Debian provides an OpenBLAS version of liblapack).
+
 PKG_LIBS := $(patsubst %,../lib/lib%.a, \
     prob conmax nlopt \
+    $(if $(BUILD_OPENBLAS),openblas) \
     $(if $(BUILD_LAPACK),lapack) $(if $(BUILD_BLAS),refblas) \
+    $(if $(BUILD_OPENBLAS),openblas) \
     $(if $(WINDOWS),q))
 
 CFLAGS += -std=gnu99 -Wall -Wextra -Wno-missing-field-initializers
@@ -43,7 +50,7 @@ qml.$(DLLEXT): $(OBJS) qml.symlist qml.mapfile $(PKG_LIBS)
 
 qml.symlist: $(OBJS)
 	$(call nm_exports,$(OBJS)) | sed -n 's/^qml_/_&/p' >$@.tmp
-	$(if $(and $(BUILD_BLAS),$(BUILD_LAPACK)),,echo _xerbla_ >>$@.tmp)
+	$(if $(BUILD_BLAS)$(BUILD_OPENBLAS),,echo _xerbla_ >>$@.tmp)
 	mv $@.tmp $@
 
 qml.mapfile: qml.symlist
