@@ -6769,6 +6769,7 @@ if[not count mttests _:`;-1"Run with -s 16 to test thread safety.";exit 3];
 -1"Testing thread safety. This may take a few minutes.";
 passed:total:0;
 {
+    if[verbose;-1"Check ",string x];
     total+:1;passed+:r:all (value y[;0]@) peach {neg[count x]?x} where y[;1];
     if[not r;-1"Failed ",string[x]," thread safety."];
     }'[key mttests;value mttests];
