@@ -367,6 +367,17 @@ def test_mpinv():
         if A.rank() < min(A.n, A.m):
             test("mpinv_rank_", A, A.rank())
 
+def test_dot():
+    test("dot", (), (), 0, comment="more useful than 'type")
+
+    random = Random()
+    for A, B in itertools.product(subjects, repeat=2):
+        if A.m == B.n:
+            C = A * B
+            i = random(A.n)
+            j = random(B.m)
+            test("dot", A.row(i), B.column(j), C[i][j])
+
 def test_mm(lflip, rflip):
     routine = "mmx["+"`lflip"*lflip+"`rflip"*rflip if lflip or rflip else "mm"
     def emit(A, B, C):
@@ -534,6 +545,7 @@ def tests():
     test_mrank()
     test_minv()
     test_mpinv()
+    test_dot()
     for rflip in False, True:
         for lflip in False, True:
             test_mm(lflip, rflip)

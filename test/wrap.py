@@ -352,6 +352,29 @@ def test_lapack_opt():
     emit("mnoopx", "`lwer", "0")
     emit("mnoopx", "`lower`upper", "0")
 
+def test_dot():
+    output("""\
+    dot_type:{[r;x;y]r~@[type .qml.dot .;(x;y);`$]};""")
+
+    def emit(*args):
+        test("dot_type", *map(qstr, args + ("1b",)))
+
+    scalar, type_error, length_error = (
+        functools.partial(emit, x) for x in "-9h `type `length".split())
+
+    scalar("0 0", "0 0.")
+    scalar("0 0", "(0;0.)")
+    type_error("0", "0 0.")
+    type_error("``", "0 0.")
+    type_error("(0 0;0 0)", "0 0.")
+    type_error("0 0", "0.")
+    type_error("0 0", "``")
+    type_error("0 0", "(0 0.;0 0.)")
+    length_error("0 0", "0 0 0")
+    length_error("4#0.", "3#0.")
+    length_error("0#0", "1#0")
+    length_error("2#0", "0#0")
+
 def test_poly():
     output("""\
     poly_type:{x~@[type .qml.poly@;y;`$]};""")
@@ -391,6 +414,7 @@ def tests():
     test_lapack_type()
     test_lapack_shape()
     test_lapack_opt()
+    test_dot()
     test_poly()
 
 if __name__ == "__main__":
