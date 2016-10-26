@@ -24,26 +24,26 @@ extract: .extracted
 	touch $@
 do_extract:
 
-patch: extract .patched
-.patched:
+patch: .patched
+.patched: .extracted
 	$(MAKE) do_patch
 	touch $@
 do_patch:
 
-configure: patch .configured
-.configured:
+configure: .configured
+.configured: .patched
 	$(MAKE) do_configure
 	touch $@
 do_configure:
 
-build: configure .built
-.built:
+build: .built
+.built: .configured
 	$(MAKE) do_build
 	touch $@
 do_build:
 
-install: build .installed
-.installed:
+install: .installed
+.installed: .built
 	mkdir -p -- ../include ../lib
 	$(MAKE) do_install
 	touch $@

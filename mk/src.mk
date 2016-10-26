@@ -6,6 +6,18 @@ OBJS := const.o alloc.o util.o opt.o \
         libm.o cephes.o lapack.o conmin.o conmax.o nlopt.o
 INCLUDES := alloc.h util.h opt.h wrap.h conmin.h conmax.h nlopt.h
 
+PKG_INCLUDES := $(addprefix ../include/, \
+    cprob.h lapack.h k.h \
+    neldermead.h cobyla.h nlopt.h nlopt-util.h)
+
+# Don't use -L../lib -lprob etc. to avoid unintentionally linking to possibly
+# incompatible system libraries if the libraries we built are missing.
+
+PKG_LIBS := $(patsubst %,../lib/lib%.a, \
+    prob conmax nlopt \
+    $(if $(BUILD_LAPACK),lapack) $(if $(BUILD_BLAS),refblas) \
+    $(if $(WINDOWS),q))
+
 CFLAGS += -std=gnu99 -Wall -Wextra -Wno-missing-field-initializers
 DEFINES = -DQML_VERSION=$(VERSION) -DKXARCH=$(KXARCH) -DKXVER=$(KXVER)
 
@@ -13,23 +25,20 @@ all: build
 
 build: qml.$(DLLEXT)
 
-%.o: %.c $(INCLUDES)
-	$(CC) $(FLAGS) \
+%.o: %.c $(INCLUDES) $(PKG_INCLUDES)
+	$(CC) -I../include \
+	    $(FLAGS) \
 	    $(CFLAGS) \
 	    $(DEFINES) \
-	    -I../include -c -o $@ $<
+	    -c -o $@ $<
 
-# Don't use -L../lib -lprob etc. to avoid unintentionally linking to possibly
-# incompatible system libraries if the libraries we built are missing.
-qml.$(DLLEXT): $(OBJS) qml.symlist qml.mapfile
+qml.$(DLLEXT): $(OBJS) qml.symlist qml.mapfile $(PKG_LIBS)
 	$(CC) $(FLAGS) $(LD_SHARED) -o $@ $(OBJS) \
-	    ../lib/libprob.a ../lib/libconmax.a ../lib/libnlopt.a \
+	    $(PKG_LIBS) \
 	    $(LDFLAGS) \
-	    $(if $(BUILD_LAPACK),../lib/liblapack.a,$(LIBS_LAPACK)) \
-	    $(if $(BUILD_BLAS),../lib/librefblas.a,$(LIBS_BLAS)) \
+	    $(LIBS_LAPACK) $(LIBS_BLAS) \
 	    $(call ld_static,$(LIBS_FORTRAN)) \
 	    -lm \
-	    $(if $(WINDOWS),-lq) \
 	    $(call ld_export,qml)
 
 qml.symlist: $(OBJS)
