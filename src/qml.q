@@ -22,6 +22,7 @@ pgamma:{gamma[x]*pgammar[x;y]};
 pgammac:{gamma[x]*pgammarc[x;y]};
 pbeta:{beta[x;y]*pbetar[x;y;z]};
 diag:{@[count[x]#abs[type x]$0;;:;]'[til count x;x]};
+dot:{if[any 9h<>type'[(x;y)];'`type](x:"f"$x) mmu y:"f"$y};
 mdim:{(count x;count x 0)};
 mdiag:{(n#x)@'til n:min mdim x};
 mrank:{sum not (d<eps*d[0]*max mdim x)|0=d:mdiag msvd[x]1};
