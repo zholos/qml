@@ -341,6 +341,26 @@ qml_minv(K x) {
     return check_err(x, err);
 }
 
+// Vector dot product
+K
+qml_dot(K x_, K y_) {
+    I n, i_1 = 1;
+    F r;
+
+    K x = convert_F(x_);
+    check_type(x,);
+
+    K y = convert_F(y_);
+    check_type(y, q0(x));
+
+    check_length((n = qnw(x)) == qnw(y), q0(x); q0(y););
+    check(n < wi, krr("limit"), q0(x); q0(y););
+
+    r = ddot_(&n, qrF(x,n), &i_1, qrF(y,n), &i_1);
+    q0(x); q0(y);
+    return kf(r);
+}
+
 
 // Matrix multiply
 static K

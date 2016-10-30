@@ -12,7 +12,7 @@ dll:`qml^dll^:`; / optional override
             `mdet`minv`mevu`mchol`mqr`mqrp`mlup`msvd`mnoop`poly`const;
         `atan2`pow`hypot`fmod`beta`pgammar`pgammarc`ipgammarc`c2cdf`c2icdf,
             `stcdf`sticdf`pscdf`psicdf`smcdf`smicdf`mm`ms`mls`mlsq,
-            `solve`min`root`mnoopx;
+            `solve`min`root`mnoopx`dot;
         `pbetar`ipbetar`fcdf`ficdf`gcdf`gicdf`bncdf`bnicdf`mmx`mlsx`mlsqx,
             `solvex`minx`rootx`conmin`line;
         `conminx`linex);
@@ -22,7 +22,6 @@ pgamma:{gamma[x]*pgammar[x;y]};
 pgammac:{gamma[x]*pgammarc[x;y]};
 pbeta:{beta[x;y]*pbetar[x;y;z]};
 diag:{@[count[x]#abs[type x]$0;;:;]'[til count x;x]};
-dot:{if[any 9h<>type'[(x;y)];'`type](x:"f"$x) mmu y:"f"$y};
 mdim:{(count x;count x 0)};
 mdiag:{(n#x)@'til n:min mdim x};
 mrank:{sum not (d<eps*d[0]*max mdim x)|0=d:mdiag msvd[x]1};

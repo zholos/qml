@@ -2,6 +2,7 @@
 #define QML_PKG_LAPACK_H
 
 // Fortran BLAS prototypes
+double ddot_(int* n, double* dx, int* incx, double* dy, int* incy);
 int dgemv_(char* trans, int* m, int* n,
            double* alpha, double* a, int* lda,
            double* x, int* incx, double* beta, double* y, int* incy);
