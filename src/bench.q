@@ -23,7 +23,7 @@ time:{
     / approximate iterations for 1 second.
     {if[(iters div 20)>t:x y;:.z.s[x;10*y]];
         if[iters>t;t:x y*:1+"j"$iters%t];
-        y,(t%0D.001)%y}[{.z.p-do[y;get x].z.p}x;1j]};
+        y,(t%0D.001)%y}[{.z.p-do[z;x . y].z.p}[x 0;1_x];1j]};
 
 bench:{
     if[not $[count patterns;any x like/:patterns;1b];:(::)];
