@@ -146,6 +146,7 @@ Constants and functions
   mrank[matrix]   rank
   minv[matrix]    inverse
   mpinv[matrix]   pseudoinverse
+  dot[a;b]        dot product
   mm[A;B]         multiply
   mmx[opt;A;B]    mm[] with options
                    `lflip: flip A

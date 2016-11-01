@@ -39,6 +39,7 @@ bench:{
 n:3 10 100 1000;
 A:n!{x cut sin sqrt 1+til x*x} each n;
 B:n!{x cut cos sqrt 1+til x*x} each n;
+a:first each A;
 b:{x[;0]}each B;
 AS:{.qml.mm[x] flip x} each A;
 AU:{.qml.mlup[x]1} each A;
@@ -53,6 +54,7 @@ bench2:{bench each (raze raze flip ("{}"vs x;)@)each (-3!'y)(;;"")'(-3!'z)};
 
 bench1[".qml.mdet A {}";n];
 bench1[".qml.minv A {}";n];
+bench1[".qml.dot[a {};b {}]";n];
 bench1[".qml.mm[A {};B {}]";n];
 bench1[".qml.mm[A {};b {}]";n];
 bench1[".qml.mm[1#A {};B {}]";n];
