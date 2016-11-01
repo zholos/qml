@@ -28,7 +28,7 @@ time:{
 bench:{
     if[not $[count patterns;any x like/:patterns;1b];:(::)];
     1 x,$[raw;"";(count[x]_47#" ")],"\t";
-    get x; / prime it
+    if[@[{get x;0b};x;{-1"'",x;1b}];:(::)]; / prime it and skip on error
     t:flip time each sample#enlist x;
     i:.qml.sticdf[sample-1;.975]*dev[t 1]%sqrt sample; / 95% confidence interval
     -1 $[raw;
