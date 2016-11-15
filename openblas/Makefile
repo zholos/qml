@@ -54,6 +54,9 @@ endif
 	echo FCOMMON_OPT='$(FFLAGS)'            >>work/Makefile.rule
 	echo CCOMMON_OPT='$(CFLAGS)'            >>work/Makefile.rule
 	echo CROSS_SUFFIX='$(TOOLPREFIX)'       >>work/Makefile.rule
+	
+# LDFLAGS is used for tests; -static helps when MinGW DLLs are not in PATH
+	echo LDFLAGS='$(LDFLAGS) $(if $(WINDOWS),-static)' >>work/Makefile.rule
 
 do_build:
 	$(MAKE) -C work
