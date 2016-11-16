@@ -1,14 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 from __future__ import division
 
+import math, operator, itertools
 from fractions import Fraction
-import math
-import operator
 
 from qform import *
 
 
-class Matrix:
+class Matrix(object):
     def __init__(self, rows):
         self.n = len(rows)
         self.m = len(rows[0])
@@ -46,9 +45,16 @@ class Matrix:
     def transpose(self):
         return Matrix(map(list, zip(*self.rows)))
 
+    @property
+    def T(self):
+        return self.transpose()
+
+    def map(self, f):
+        return Matrix([[f(i, j, self[i][j]) for j in range(self.m)]
+                                            for i in range(self.n)])
+
     def take_lower(self):
-        return Matrix([[self[i][j] if j <= i else 0 for j in range(self.m)]
-                                                    for i in range(self.n)])
+        return self.map(lambda i, j, v: v if j <= i else 0)
 
     def take_upper(self):
         return self.transpose().take_lower().transpose()
@@ -188,7 +194,7 @@ class Matrix:
                     c.append(self.column(j))
                     r.append(rre[i])
                     break
-        c, r = Matrix(c).transpose(), Matrix(r)
+        c, r = Matrix(c).T, Matrix(r)
 
         if c * r != self:
             raise Exception()
@@ -196,13 +202,13 @@ class Matrix:
 
     def pseudo_inverse(self):
         if self.rank() == min(self.n, self.m):
-            transpose = self.transpose()
+            transpose = self.T
             if self.n < self.m:
                 inverse = transpose * (self * transpose).inverse()
             else:
                 inverse = (transpose * self).inverse() * transpose
         elif self.rank() == 0:
-            return self.transpose()
+            return self.T
         else:
             c, r = self._rank_factorize()
             inverse = r.pseudo_inverse() * c.pseudo_inverse()
@@ -321,7 +327,7 @@ def rank_subjects():
 
         transposed = A.n > A.m
         if transposed:
-            A = A.transpose()
+            A = A.T
         for rank in range(1, A.n+1):
             rows, free = range(A.n), []
             for i in range(rank):
@@ -334,7 +340,7 @@ def rank_subjects():
                     B.append(map(sum, zip(A[random(free)], A[random(free)])))
             B = Matrix(B)
             if transposed:
-                B = B.transpose()
+                B = B.T
             if B.rank() == rank:
                 if B not in done:
                     done.append(B)
@@ -361,17 +367,43 @@ def test_mpinv():
         if A.rank() < min(A.n, A.m):
             test("mpinv_rank_", A, A.rank())
 
-def test_mm():
-    def emit(A, B, C):
-        test("mm", A, B, C)
-        if B.m == 1:
-            test("mm", A, B.column(0), C.column(0))
+def test_dot():
+    test("dot", (), (), 0, comment="more useful than 'type")
 
-    for A in subjects:
-        for B in subjects:
-            if A.m == B.n:
-                C = A * B
-                emit(A, B, C)
+    random = Random()
+    for A, B in itertools.product(subjects, repeat=2):
+        if A.m == B.n:
+            C = A * B
+            i = random(A.n)
+            j = random(B.m)
+            test("dot", A.row(i), B.column(j), C[i][j])
+
+def test_mm(lflip, rflip):
+    routine = "mmx["+"`lflip"*lflip+"`rflip"*rflip if lflip or rflip else "mm"
+    def emit(A, B, C):
+        if lflip:
+            A = A.T
+        if rflip:
+            B = B.T
+        test(routine, A, B, C)
+        if not rflip and B.m == 1:
+            assert C.m == 1
+            test(routine, A, B.column(0), C.column(0))
+
+    for A, B in itertools.product(subjects, repeat=2):
+        if A.m == B.n:
+            C = A * B
+            emit(A, B, C)
+
+    if lflip and rflip:
+        for A, B in itertools.product(subjects, repeat=2):
+            if A.m == B.n and min(A.n, A.m, A.n, B.m) >= 2 and \
+                    A != B and A != A.T and B != B.T:
+                test("mmx[`lflip`rflip!2#1000000000", A.T, B.T, A * B,
+                     comment="use flags only in bool context")
+                break
+        else:
+            assert False
 
 def test_ms():
     def emit(A, B, X):
@@ -382,95 +414,130 @@ def test_ms():
     single_done = 0
     zero_done = 0
     random = Random()
-    for A in subjects:
-        for B in subjects:
-            if A.m == A.n == B.n:
-                if A.n == 1:
-                    if single_done == 3:
-                        continue
-                    single_done += 1
+    for A, B in itertools.product(subjects, repeat=2):
+        if A.m == A.n == B.n:
+            if A.n == 1:
+                if single_done == 3:
+                    continue
+                single_done += 1
 
-                L = [A.take_lower(), A.take_upper()]
-                if L[0] == L[1]:
-                    L.pop()
-                i = random(A.n)
-                for Z in L:
-                    emit(Z, B, Z.subst_solve(B))
-                    if zero_done == 10:
-                        continue
-                    zero_done += 1
-                    Z[i][i] = 0
-                    emit(Z, B, Matrix.null_matrix(B.n, B.m))
+            L = [A.take_lower(), A.take_upper()]
+            if L[0] == L[1]:
+                L.pop()
+            i = random(A.n)
+            for Z in L:
+                emit(Z, B, Z.subst_solve(B))
+                if zero_done == 10:
+                    continue
+                zero_done += 1
+                Z[i][i] = 0
+                emit(Z, B, Matrix.null_matrix(B.n, B.m))
 
-def test_mls(equi):
-    routine = "mlsx[`equi" if equi else "mls"
+def test_mls(equi, flip):
+    routine = "mlsx["+"`equi"*equi+"`flip"*flip if equi or flip else "mls"
     def emit(A, B, X):
-        test(routine, A, B, X)
+        op = lambda x: x.T if flip else x
+        test(routine, op(A), op(B), op(X))
         if B.m == 1:
-            test(routine, A, B.column(0), X.column(0))
+            test(routine, op(A), B.column(0), X.column(0))
 
-    if not equi:
+    if not (equi or flip):
         test(routine, [[0]], [1], [None], comment="ATLAS dgetf2() return code")
 
     single_done = 0
     random = Random()
 
-    for A in subjects:
-        for B in subjects:
-            if A.m == A.n == B.n:
-                if A.n == 1:
-                    if single_done == 3:
-                        continue
-                    single_done += 1
+    for A, B in itertools.product(subjects, repeat=2):
+        if A.m == A.n == B.n:
+            if A.n == 1:
+                if single_done == 3:
+                    continue
+                single_done += 1
 
-                if A.det() != 0:
-                    X = A.inverse() * B
-                else:
-                    X = Matrix.null_matrix(B.n, B.m)
+            if A.det() != 0:
+                X = A.inverse() * B
+            else:
+                X = Matrix.null_matrix(B.n, B.m)
 
-                emit(A, B, X)
+            emit(A, B, X)
 
-                if equi and A.det() != 0 and A.m >= 3 and A.m <= 5:
-                    L, R = [Matrix.diagonal_matrix(random.permute(
-                            [1000 ** i for i in range(A.m)])) for i in range(2)]
+            if equi and A.det() != 0 and A.m >= 3 and A.m <= 5:
+                L, R = [Matrix.diagonal_matrix(random.permute(
+                        [1000 ** i for i in range(A.m)])) for i in range(2)]
 
-                    emit(L * A,     L * B,               X)
-                    emit(    A * R,     B, R.inverse() * X)
-                    emit(L * A * R, L * B, R.inverse() * X)
+                emit(L * A,     L * B,               X)
+                emit(    A * R,     B, R.inverse() * X)
+                emit(L * A * R, L * B, R.inverse() * X)
 
-def test_mlsq(svd):
-    routine = "mlsqx[`svd" if svd else "mlsq"
+def test_mlsq(svd, flip):
+    routine = "mlsqx["+"`svd"*svd+"`flip"*flip if svd or flip else "mlsq"
     def emit(A, B, X):
-        test(routine, A, B, X)
+        op = lambda x: x.T if flip else x
+        test(routine, op(A), op(B), op(X))
         if B.m == 1:
-            test(routine, A, B.column(0), X.column(0))
+            test(routine, op(A), B.column(0), X.column(0))
 
     single_done = 0
-    for A in subjects:
-        for B in subjects:
-            if A.n == B.n:
-                if A.n == 1:
-                    if single_done == 3:
-                        continue
-                    single_done += 1
+    for A, B in itertools.product(subjects, repeat=2):
+        if A.n == B.n:
+            if A.n == 1:
+                if single_done == 3:
+                    continue
+                single_done += 1
 
-                X = A.pseudo_inverse() * B
+            X = A.pseudo_inverse() * B
 
-                if not svd and A.rank() != min(A.n, A.m):
-                    # Replace matrix by more-obviously-rank-deficient one
-                    # as routine is poor at detecting them.
-                    A = Matrix.diagonal_matrix([1] * (A.n - 1) + [0]) * A
-                    X = Matrix.null_matrix(B.n, B.m)
+            if not svd and A.rank() != min(A.n, A.m):
+                # Replace matrix by more-obviously-rank-deficient one
+                # as routine is poor at detecting them.
+                A = Matrix.diagonal_matrix([1] * (A.n - 1) + [0]) * A
+                X = Matrix.null_matrix(B.n, B.m)
 
-                emit(A, B, X)
+            emit(A, B, X)
 
 def test_mkron():
     output("""\
     test[".qml.mkron[(1 2;-3 4);-1 2]";"(-1 -2;2 4;3 -4;-6 8)"];
     test[".qml.mkron[(0 1 0;-2.5 0 3);(1 2;-3 4)]";"(0 0 1 2 0 0;0 0 -3 4 0 0;-2.5 -5 0 0 3 6;7.5 -10 0 0 -9 12)"];""")
 
+def test_mnoop():
+    output("""\
+    mnoopx_triangular:{(::;``lower`upper?)@'
+        .qml.mnoopx[`mark`square`triangular,x;y]`x`triangular};""")
+    def mark(A):
+        return A.map(lambda i, j, v:
+                     v*10000 + ((i+1)*100 + (j+1))*(-1 if v<0 else 1))
+    def make_lower(A):
+        return A.map(lambda i, j, v: v if j < i else 1 if j == i else 0)
+
+    copy_done = 0
+    lower = True
+    for A in subjects:
+        if min(A.n, A.m) > 1 and copy_done < 3:
+            test("mnoop", A, A)
+            copy_done += 1
+        test("mnoopx[`mark", A, mark(A))
+        test("mnoopx[`mark`flip", A, mark(A.T).T)
+        if A.m == 1:
+            test("mnoopx[`mark", A.column(0), mark(A).column(0))
+        if A.m == A.n:
+            test("mnoopx[`mark`square", A, mark(A))
+            test("mnoopx[`mark`square`flip", A, mark(A.T).T)
+            # triangular without flip isn't used so isn't implemented
+            if A.take_lower() != A != A.take_upper():
+                test("mnoopx_triangular[`flip", A, (mark(A.T).T, 0))
+            L = A.take_lower() if lower else A.take_upper()
+            if L != A:
+                test("mnoopx_triangular[`flip", L, (mark(L.T).T, 1+lower))
+            lower = not lower
+        test("mnoopx[`mark`upper", A, mark(A).take_upper())
+        test("mnoopx[`mark`lower", A, make_lower(mark(A)))
+        test("mnoopx[`mark`flip`upper", A, mark(A.T).T.take_upper())
+        test("mnoopx[`mark`flip`lower", A, make_lower(mark(A.T).T))
+
 
 def tests():
+    reps(10000)
     prec("1e-9")
     test_diag()
     test_mdiag()
@@ -478,14 +545,20 @@ def tests():
     test_mrank()
     test_minv()
     test_mpinv()
-    test_mm()
+    test_dot()
+    for rflip in False, True:
+        for lflip in False, True:
+            test_mm(lflip, rflip)
     prec("1e-7")
     test_ms()
-    test_mls(False)
-    test_mls(True)
-    test_mlsq(False)
-    test_mlsq(True)
+    for flip in False, True:
+        for equi in False, True:
+            test_mls(equi, flip)
+    for flip in False, True:
+        for svd in False, True:
+            test_mlsq(svd, flip)
     test_mkron()
+    test_mnoop()
 
 
 if __name__ == "__main__":

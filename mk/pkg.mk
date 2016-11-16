@@ -4,6 +4,7 @@ all: build
 
 NETLIB_DIR = http://www.netlib.org
 Q_DIR = http://kx.com/q
+GITHUB_DIR = https://github.com/$(1)/$(2)/archive/$(3)
 
 .PRECIOUS: ../download/%.part
 ../download/%.part:
@@ -24,26 +25,26 @@ extract: .extracted
 	touch $@
 do_extract:
 
-patch: extract .patched
-.patched:
+patch: .patched
+.patched: .extracted
 	$(MAKE) do_patch
 	touch $@
 do_patch:
 
-configure: patch .configured
-.configured:
+configure: .configured
+.configured: .patched
 	$(MAKE) do_configure
 	touch $@
 do_configure:
 
-build: configure .built
-.built:
+build: .built
+.built: .configured
 	$(MAKE) do_build
 	touch $@
 do_build:
 
-install: build .installed
-.installed:
+install: .installed
+.installed: .built
 	mkdir -p -- ../include ../lib
 	$(MAKE) do_install
 	touch $@
@@ -52,3 +53,5 @@ do_install:
 clean: do_clean
 	rm -f .extracted .patched .configured .built .installed
 do_clean:
+
+.PHONY: $(foreach t,extract patch configure build install clean,$(t) do_$(t))

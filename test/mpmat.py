@@ -1,8 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 from __future__ import division
 
 import sympy as sp
-import sympy.mpmath as mp
+import mpmath as mp
 from sympy import Matrix, S, I
 
 from qform import *
@@ -279,6 +279,7 @@ def test_poly():
 
 
 def tests():
+    reps(10000)
     prec("1e-9")
     test_mev()
     test_mchol()

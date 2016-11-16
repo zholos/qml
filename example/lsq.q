@@ -11,7 +11,7 @@ b:.qml.nicdf .005+m?.99;
 
 / OLS estimator
 1"OLS:           ";
-\t x0:.qml.mm[.qml.minv .qml.mm[flip A]A].qml.mm[A_:flip A]b;
+\t x0:.qml.mm[.qml.minv .qml.mmx[`lflip;A;A]].qml.mmx[`lflip;A;b];
 
 
 / pseudoinverse
@@ -33,6 +33,6 @@ b:.qml.nicdf .005+m?.99;
 
 
 / check results
-if[1e-7<{max -1+(y%x)|x%y}[.qml.mm[A_].qml.mm[A]x0;.qml.mm[A_:flip A]b];
+if[1e-7<{max -1+(y%x)|x%y}[.qml.mmx[`lflip;A].qml.mm[A]x0;.qml.mmx[`lflip;A;b]];
    '`incorrect];
 if[1e-5<max{max -1+(x0%x)|x%x0}each(x1;x2;x3;x4);'`different];

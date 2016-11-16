@@ -1,14 +1,21 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 from __future__ import division
 
 import sympy as sp
 import sympy.stats as st
-import sympy.mpmath as mp
+import mpmath as mp
 from sympy import S, pi, oo, FiniteSet, ProductSet, Interval
 mpf = mp.mpf
 
 from qform import *
 
+
+def test_const():
+    output("""\
+    test["pi";"3.141592653589793"];
+    test["e ";"2.7182818284590452"];
+    test[".qml.eps+1";"1"];
+    test[".qml.eps>0";"1"];""")
 
 posarg = FiniteSet(0, S(1)/4, S(1)/3, S(1)/2, S(3)/4, 1, 2, 3)
 exparg = posarg + FiniteSet(*(-x for x in posarg))
@@ -194,7 +201,8 @@ def test_prob():
             y = cdf(*arg)
             if isinstance(y, mpf):
                 e = sp.nsimplify(y, rational=True)
-                if e.is_Rational and e.q <= 1000 and mp.almosteq(e, y, 1e-25):
+                if e.is_Rational and e.q <= 1000 and \
+                        mp.almosteq(mp.mpf(e), y, 1e-25):
                     y = e
             else:
                 y = N(y)
@@ -275,6 +283,10 @@ def test_prob():
 
 
 def tests():
+    prec("1e-14")
+    reps(0);
+    test_const()
+    reps(10000)
     test_pow()
     test_trig()
     test_trigh()

@@ -12,6 +12,7 @@ DEFINES += -DDEBUG -DCOVERAGE
 	cp ../debug/qml.q ../debug/test.q .
 	touch $@
 
+.PHONY: coverage
 coverage: all
 	rm -f -- *.gcda *.gcov
 	-q test.q -cd

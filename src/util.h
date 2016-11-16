@@ -2,6 +2,7 @@
 #define QML_SRC_UTIL_H
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <k.h>
 
@@ -48,7 +49,12 @@
 #define qE(x, i) qT__((x), (i), KE, E)
 #define qF(x, i) qT__((x), (i), KF, F)
 
-#define q0(x) (assert((x)), r0((x)), (x) = 0, NULL)
+// pointer to range of n typed values
+#define qrT__(x, n_, t_, T) \
+    k##T((assert((x) && (x)->t == t_ && (n_) >= 0 && (n_) <= (x)->n), (x)))
+#define qrF(x, i) qrT__((x), (i), KF, F)
+
+#define q0(x) (assert((x)), r0((x)), (x) = NULL, (void)0)
 
 
 #if __GNUC__ >= 3
@@ -71,6 +77,10 @@
 // n may be negative
 #define repeat(i, n) \
     for (L i = 0, n__##i = (n); i < n__##i; i++)
+#define repeati(i, n) \
+    for (I i = 0, n__##i = (n); i < n__##i; i++)
+#define repeati_(i, i0, n) \
+    for (I i = (i0), n__##i = (n); i < n__##i; i++)
 
 
 static inline int
@@ -98,8 +108,18 @@ int item_I(I* r, K x, L i);
 int item_F(F* r, K x, L i);
 
 
+// dst or src may be null if n=0
+static inline void
+copy_F(F* dst_base, L dst_offs, const F* src_base, L src_offs, L n) {
+    // memcpy on null, even with 0 size, is undefined
+    // pointer arithmetic on null is undefined
+    if (n)
+        memcpy(dst_base + dst_offs,
+               src_base + src_offs, n * sizeof(F));
+}
+
 K make_F_null(L n);
-K make_F(const F* a, L n);
+K make_F(const F* a_base, L a_offs, L n);
 
 
 K new_D();
@@ -109,6 +129,7 @@ void append_D(K x, S k, K v);
 static inline I min_i(I x, I y) { return x <= y ? x : y; }
 static inline I max_i(I x, I y) { return x >= y ? x : y; }
 
+static inline void swap_i(I* x, I* y) { I t = *x; *x = *y; *y = t; }
 static inline void swap_l(L* x, L* y) { L t = *x; *x = *y; *y = t; }
 static inline void swap_f(F* x, F* y) { F t = *x; *x = *y; *y = t; }
 

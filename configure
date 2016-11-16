@@ -30,6 +30,9 @@ Compiler options:
 BLAS options (needed for LAPACK):
 
   --build-blas                     build Netlib BLAS (fast build)
+  --build-openblas                 build OpenBLAS with dynamic architecture
+  --build-openblas=native          build OpenBLAS for specified architecture
+                                   (native, generic, sandybridge, etc.)
   --with-blas=/path/to/libblas.a   use system BLAS library
 
 LAPACK options:
@@ -48,7 +51,7 @@ unset TOOLPREFIX XCC CONFIG
 unset LDFLAGS LDFLAGS_LIBGCC LD_EXPORT LD_STATIC LD_SHARED STRIP_FLAGS
 unset LIBS_FORTRAN LIBS_BLAS LIBS_LAPACK
 unset FETCH SHA256
-unset BUILD_BLAS BUILD_ATLAS WITH_BLAS WITH_LAPACK
+unset BUILD_BLAS BUILD_OPENBLAS WITH_BLAS BUILD_LAPACK WITH_LAPACK
 
 
 for arg in "$@"; do
@@ -63,7 +66,8 @@ for arg in "$@"; do
            TOOLPREFIX=*)    TOOLPREFIX="${arg#*=}" ;;
                   XCC=*)           XCC="${arg#*=}" ;;
            --build-blas)    BUILD_BLAS=1           ;;
-          --build-atlas)   BUILD_ATLAS=1           ;;
+       --build-openblas)    BUILD_OPENBLAS=dynamic ;;
+       --build-openblas=*)  BUILD_OPENBLAS="${arg#*=}" ;;
           --with-blas=*)     WITH_BLAS="${arg#*=}" ;;
          --build-lapack)  BUILD_LAPACK=1           ;;
         --with-lapack=*)   WITH_LAPACK="${arg#*=}" ;;
@@ -491,8 +495,14 @@ makeyesno "checking if Fortran locals are placed on stack..." \
 # Libraries
 
 CONFTEST=blas
-if [ -n "$BUILD_BLAS" ]; then
+if [ -n "$BUILD_BLAS" ] && [ -n "$BUILD_OPENBLAS" ]; then
+    echo "choose either --build-blas or --build-openblas" >&2
+    exit 1
+elif [ -n "$BUILD_BLAS" ]; then
     echo "will build BLAS"
+    BUILD_LAPACK=1
+elif [ -n "$BUILD_OPENBLAS" ]; then
+    echo "will build OpenBLAS for $BUILD_OPENBLAS architecture"
     BUILD_LAPACK=1
 elif [ -n "${WITH_BLAS+n}" ]; then
     LIBS_BLAS=$WITH_BLAS
@@ -571,6 +581,7 @@ STRIP_FLAGS    := $STRIP_FLAGS
 LIBS_FORTRAN   := $LIBS_FORTRAN
 LIBS_BLAS      := $LIBS_BLAS
 BUILD_BLAS     := $BUILD_BLAS
+BUILD_OPENBLAS := $BUILD_OPENBLAS
 LIBS_LAPACK    := $LIBS_LAPACK
 BUILD_LAPACK   := $BUILD_LAPACK
 FETCH          := $FETCH

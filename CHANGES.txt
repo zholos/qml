@@ -1,3 +1,12 @@
+Version 0.7 on 2016-11-16:
+  * Added 'dot' function.
+  * Added `flip option to 'mls' and 'mlsq' and `lflip`rflip options to 'mm'.
+  * Added option to build OpenBLAS instead of Netlib BLAS, improving LAPACK
+    performance (see ./configure --help).
+  * Multiple optimizations in LAPACK interface code.
+  * Fixed crash in 'mlsx' with `equi and incompatible matrix shapes (e.g.
+     .qml.mlsx[`equi;1 1#.1;100 100#.1]).
+
 Version 0.6 on 2015-12-27:
   * Support compiling on OS X.
   * Analytic gradient functions can be specified in 'min', 'conmin' and 'solve'.

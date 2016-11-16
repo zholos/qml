@@ -1,6 +1,6 @@
 include ../mk/src.mk
 
-CFLAGS += -Werror \
+CFLAGS += \
     -Wno-uninitialized -Wno-parentheses -Wno-sign-compare \
     -Wno-unused -Wno-unused-parameter
 

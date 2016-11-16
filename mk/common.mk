@@ -2,6 +2,8 @@ all:
 
 force:
 
+.PHONY: all force build install uninstall test bench clean
+
 LD      = $(TOOLPREFIX)ld
 AR      = $(TOOLPREFIX)ar
 RANLIB  = $(TOOLPREFIX)ranlib

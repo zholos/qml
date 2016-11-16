@@ -146,7 +146,11 @@ Constants and functions
   mrank[matrix]   rank
   minv[matrix]    inverse
   mpinv[matrix]   pseudoinverse
+  dot[a;b]        dot product
   mm[A;B]         multiply
+  mmx[opt;A;B]    mm[] with options
+                   `lflip: flip A
+                   `rflip: flip B
   ms[A;B]         solve B=A mm X, A is triangular
   mev[matrix]     (eigenvalues; eigenvectors) sorted by decreasing modulus
   mchol[matrix]   Cholesky factorization upper matrix
@@ -163,9 +167,11 @@ Constants and functions
   mls[A;B]        solve B=A mm X
   mlsx[opt;A;B]   mls[] with options
                    `equi: equilibrate the system (default: don't)
+                   `flip: flip A, and flip B and X unless B is a vector
   mlsq[A;B]       solve min ||B-A mm X||
   mlsqx[opt;A;B]  mlsq[] with options
                    `svd:  use SVD algorithm      (default: QR or LQ)
+                   `flip: flip A, and flip B and X unless B is a vector
 
   root[f;(x0;x1)]         find root on interval (f(x0)f(x1)<0)
   rootx[opt;f;(x0;x1)]    root[] with options (as dictionary or mixed list)

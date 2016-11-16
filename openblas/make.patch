@@ -1,0 +1,63 @@
+Don't include Netlib LAPACK routines because we build Netlib LAPACK ourselves,
+but still build OpenBLAS custom implementations of LAPACK routines.
+
+--- Makefile
++++ Makefile
+@@ -201,7 +201,7 @@
+ 	fi; \
+ 	done
+ 
+-ifeq ($(NO_LAPACK), 1)
++ifeq (1, 1)
+ netlib :
+ 
+ else
+--- utest/Makefile
++++ utest/Makefile
+@@ -11,7 +11,7 @@
+ OBJS=utest_main.o test_amax.o
+ #test_rot.o test_swap.o test_axpy.o test_dotu.o test_rotmg.o test_dsdot.o test_fork.o
+ 
+-ifneq ($(NO_LAPACK), 1)
++ifneq (1, 1)
+ OBJS += test_potrs.o
+ endif
+ 
+
+On MinGW ln just copies the file, so do that after the file has been created.
+
+--- Makefile
++++ Makefile
+@@ -130,7 +130,6 @@
+ 	$(error OpenBLAS: neither static nor shared are enabled.)
+ endif
+ endif
+-	@-ln -fs $(LIBNAME) $(LIBPREFIX).$(LIBSUFFIX)
+ 	@for d in $(SUBDIRS) ; \
+ 	do if test -d $$d; then \
+ 	  $(MAKE) -C $$d $(@F) || exit 1 ; \
+@@ -156,6 +155,7 @@
+ ifdef USE_THREAD
+ 	@echo USE_THREAD=$(USE_THREAD) >>  Makefile.conf_last
+ endif
++	@-ln -fs $(LIBNAME) $(LIBPREFIX).$(LIBSUFFIX)
+ 	@touch lib.grd
+ 
+ prof : prof_blas prof_lapack
+
+
+CROSS_SUFFIX can't be set in Makefile.rule because it's derived from CC by
+c_check, but that doesn't always match what qml configure detects, so we need to
+override it.
+
+--- Makefile.system
++++ Makefile.system
+@@ -195,6 +195,8 @@
+ NEED_PIC = 1
+ endif
+ 
++CROSS_SUFFIX=$(QML_TOOLPREFIX)
++
+ ARFLAGS	=
+ CPP	= $(COMPILER) -E
+ AR	= $(CROSS_SUFFIX)ar

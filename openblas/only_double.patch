@@ -1,0 +1,26 @@
+Skip single-precision and complex routines and tests that require them.
+
+--- Makefile.tail
++++ Makefile.tail
+@@ -9,8 +9,8 @@
+ 
+ HPLOBJS_P   = $(HPLOBJS:.$(SUFFIX)=.$(PSUFFIX))
+ 
+-BLASOBJS    = $(SBLASOBJS)   $(DBLASOBJS)   $(CBLASOBJS)   $(ZBLASOBJS)
+-BLASOBJS_P  = $(SBLASOBJS_P) $(DBLASOBJS_P) $(CBLASOBJS_P) $(ZBLASOBJS_P)
++BLASOBJS    = $(DBLASOBJS)
++BLASOBJS_P  = $(DBLASOBJS_P)
+ 
+ ifdef EXPRECISION
+ BLASOBJS   += $(QBLASOBJS)   $(XBLASOBJS)
+--- utest/Makefile
++++ utest/Makefile
+@@ -8,7 +8,7 @@
+ 
+ include $(TOPDIR)/Makefile.system
+ 
+-OBJS=utest_main.o test_amax.o
++OBJS=utest_main.o
+ #test_rot.o test_swap.o test_axpy.o test_dotu.o test_rotmg.o test_dsdot.o test_fork.o
+ 
+ ifneq (1, 1)

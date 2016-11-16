@@ -1,15 +1,15 @@
 include ../mk/pkg.mk
 
-lapack-3.6.0.tgz.url = $(NETLIB_DIR)/lapack/lapack-3.6.0.tgz
-lapack-3.6.0.tgz.sha256 = \
-    a9a0082c918fe14e377bbd570057616768dca76cbdc713457d8199aaa233ffc3
+lapack-3.6.1.tgz.url = $(NETLIB_DIR)/lapack/lapack-3.6.1.tgz
+lapack-3.6.1.tgz.sha256 = \
+    888a50d787a9d828074db581c80b2d22bdb91435a673b1bf6cd6eb51aa50d1de
 
 # BUILD_BLAS sets BUILD_LAPACK too
 ifneq ($(BUILD_LAPACK),)
 
-do_extract: ../download/lapack-3.6.0.tgz
+do_extract: ../download/lapack-3.6.1.tgz
 	tar xzf $<
-	ln -sf lapack-3.6.0 work
+	ln -sf lapack-3.6.1 work
 
 
 do_patch: make.patch
@@ -28,9 +28,13 @@ do_configure:
 	echo RANLIB='$(RANLIB)'                        >>work/make.inc
 	
 ifeq ($(BUILD_BLAS),)
+ifeq ($(BUILD_OPENBLAS),)
 	echo BLASLIB='$(LIBS_BLAS)'                    >>work/make.inc
+else
+	echo BLASLIB=../../../../lib/libopenblas.a     >>work/make.inc
 endif
-	
+endif
+
 # Test routines use huge arrays that overflow the stack with -frecursive.
 # Alternative fix is to increase stack size.
 	echo OPTS_TESTING='$(FLAGS) $(FFLAGS_NTHREAD)' >>work/make.inc
