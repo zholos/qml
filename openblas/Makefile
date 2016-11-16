@@ -53,7 +53,7 @@ endif
 	echo COMMON_OPT='$(FLAGS)'              >>work/Makefile.rule
 	echo FCOMMON_OPT='$(FFLAGS)'            >>work/Makefile.rule
 	echo CCOMMON_OPT='$(CFLAGS)'            >>work/Makefile.rule
-	echo CROSS_SUFFIX='$(TOOLPREFIX)'       >>work/Makefile.rule
+	echo QML_TOOLPREFIX='$(TOOLPREFIX)'     >>work/Makefile.rule
 	
 # LDFLAGS is used for tests; -static helps when MinGW DLLs are not in PATH
 	echo LDFLAGS='$(LDFLAGS) $(if $(WINDOWS),-static)' >>work/Makefile.rule
