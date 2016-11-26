@@ -11,11 +11,12 @@
 *.gcov
 callgrind.out.*
 /config.mk
-/contest.*
+/conftest.*
 work/
+openblas/work
+openblas/OpenBLAS-*/
 lapack/work
 lapack/lapack-*/
-nlopt/work
 nlopt/nlopt
 nlopt/nlopt-*/
 /download/
