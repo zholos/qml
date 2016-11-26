@@ -19,7 +19,7 @@ do_patch:
 	patch -p0 -d work <make.patch
 ifneq ($(BUILD_OPENBLAS), dynamic)
 	patch -p0 -d work <only_double.patch
-	$(SEDI) -e '/^[[:space:]].*\([scz]blat\|[SCZ]BLAT\)/d' \
+	$(SEDI) -e '/^[[:space:]].*[scz]blat/d;/^[[:space:]].*[SCZ]BLAT/d' \
 	    -e '/^[scz]blat/d;/^level/s/[scz]blat[^[:space:]]*//g' \
 	    work/test/Makefile
 endif
