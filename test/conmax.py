@@ -352,6 +352,9 @@ def test_min_opt():
     for opt in ["()", "`nm", "`sbplx"]:
         emit("`type", "`")
         emit("`nan", "0n")
+        emit("`type", "(`;(((0 0;0);0);0 0 0;0 0))")
+        emit("`type", "(0;(((0 0;0);`);0 0 0;0 0))")
+        emit("`type", "(0;(((0 0;0);0);0 0 0;``))")
 
     for opt in ["`nm", "`sbplx"]:
         emit("`limit", "10001#0")
@@ -389,6 +392,16 @@ def test_min_opt():
     emit("`opt", "`nm`rk")
     emit("`opt", "`nm`tol,1e-6")
     emit("`opt", "`nm`steps,10")
+
+
+def test_min_convert():
+    output("""\
+    minx_convert:{("f"$x)~.qml.minx[`full`quiet`iter,0;{0};x:enlist x]`last};""")
+    def emit(arg):
+        test("minx_convert", qstr(arg), qstr("1b"))
+    emit("(0b;1b;15h;16i;17j;18e;19.)")
+    emit("(01011b;15 25h;16 26i;17 27j;18 28e;19 29.)")
+    emit("(0.;1.;2.;3 4;5.)")
 
 
 def test_min():
@@ -429,6 +442,7 @@ def test_min():
          [[[0, 0]], [[10, -5]], [[-100, 50]]],
          [[Decimal("9.4011843228733705351"), Decimal("-6.7445676817128794990")]],
          more = True)
+    emit("{sum{x*x}{x-til count x}raze over(x;y)}", None, ["(0;(((0 0;0);0);0 0 0;0 0))"], "(0;(((1 2;3);4);5 6 7;8 9))")
 
 
 
@@ -639,6 +653,7 @@ def tests():
     test_solve_opt()
     test_solve()
     test_min_opt()
+    test_min_convert()
     test_min()
     prec("1e-3")
     test_conmin_opt()
