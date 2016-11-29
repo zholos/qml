@@ -282,6 +282,7 @@ subjects = [
     Matrix.random_matrix(7, 4, math.sqrt(2)),
     Matrix.random_matrix(4, 7, math.sqrt(3)),
     Matrix([[1, 3], [2, 6]]),
+    Matrix([[1, 2, 3, 4], [-5, -6, -7, -8], [8, 8, 8, 8], [3, 2, 1, 0]]),
     Matrix.random_matrix(3, 1, math.sqrt(5)),
     Matrix.random_matrix(1, 3, math.sqrt(7)),
     Matrix.random_matrix(4, 1, math.sqrt(11)),
@@ -351,13 +352,21 @@ def test_mrank():
         test("mrank", A, A.rank())
 
 def test_minv():
+    output("""\
+    / For singular input matrix accept either nulls or very large values in case
+    / determinant is not exactly 0 due to rounding.
+    minv_singular:{$[all(1%prec)<abs raze x:.qml.minv x;0n*x;x]};""")
     for A in subjects:
         if A.m == A.n:
             if A.det() != 0:
-                B = A.inverse()
+                test("minv", A, A.inverse())
             else:
-                B = Matrix.null_matrix(A.n, A.m)
-            test("minv", A, B)
+                test("minv", Matrix.diagonal_matrix([0]*A.n),
+                             Matrix.null_matrix(A.n, A.m),
+                             comment="always exactly singular")
+                test("minv_singular", A, Matrix.null_matrix(A.n, A.m))
+                if A != A.T:
+                    test("minv_singular", A.T, Matrix.null_matrix(A.m, A.n))
 
 def test_mpinv():
     output("""\
@@ -426,6 +435,8 @@ def test_ms():
                 L.pop()
             i = random(A.n)
             for Z in L:
+                if Z.det() == 0:
+                    continue
                 emit(Z, B, Z.subst_solve(B))
                 if zero_done == 10:
                     continue
