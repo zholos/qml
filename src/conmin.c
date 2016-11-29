@@ -100,12 +100,13 @@ static void
 call_handle_error(struct call_info* info, K x)
 {
     // function didn't return a float as we'd hoped
-    if (!x || qt(x) == -128)
-        info->error = x;
-    else {
-        info->error = krr(callable(x) ? "rank" : "type");
-        q0(x);
-    }
+    if (info->error == no_error)
+        if (!x || qt(x) == -128)
+            info->error = x;
+        else {
+            info->error = krr(callable(x) ? "rank" : "type");
+            q0(x);
+        }
 }
 
 F
