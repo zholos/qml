@@ -351,13 +351,21 @@ def test_mrank():
         test("mrank", A, A.rank())
 
 def test_minv():
+    output("""\
+    / For singular input matrix accept either nulls or very large values in case
+    / determinant is not exactly 0 due to rounding.
+    minv_singular:{$[all(1%prec)<abs raze x:.qml.minv x;0n*x;x]};""")
     for A in subjects:
         if A.m == A.n:
             if A.det() != 0:
-                B = A.inverse()
+                test("minv", A, A.inverse())
             else:
-                B = Matrix.null_matrix(A.n, A.m)
-            test("minv", A, B)
+                test("minv", Matrix.diagonal_matrix([0]*A.n),
+                             Matrix.null_matrix(A.n, A.m),
+                             comment="always exactly singular")
+                test("minv_singular", A, Matrix.null_matrix(A.n, A.m))
+                if A != A.T:
+                    test("minv_singular", A.T, Matrix.null_matrix(A.m, A.n))
 
 def test_mpinv():
     output("""\
