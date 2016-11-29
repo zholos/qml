@@ -1,3 +1,6 @@
+Version 0.7.1 on 2016-11-29:
+  * Fixed OpenBLAS build on OS X.
+
 Version 0.7 on 2016-11-16:
   * Added 'dot' function.
   * Added `flip option to 'mls' and 'mlsq' and `lflip`rflip options to 'mm'.
