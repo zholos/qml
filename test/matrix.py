@@ -282,6 +282,7 @@ subjects = [
     Matrix.random_matrix(7, 4, math.sqrt(2)),
     Matrix.random_matrix(4, 7, math.sqrt(3)),
     Matrix([[1, 3], [2, 6]]),
+    Matrix([[1, 2, 3, 4], [-5, -6, -7, -8], [8, 8, 8, 8], [3, 2, 1, 0]]),
     Matrix.random_matrix(3, 1, math.sqrt(5)),
     Matrix.random_matrix(1, 3, math.sqrt(7)),
     Matrix.random_matrix(4, 1, math.sqrt(11)),
@@ -434,6 +435,8 @@ def test_ms():
                 L.pop()
             i = random(A.n)
             for Z in L:
+                if Z.det() == 0:
+                    continue
                 emit(Z, B, Z.subst_solve(B))
                 if zero_done == 10:
                     continue
