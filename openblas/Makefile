@@ -1,14 +1,14 @@
 include ../mk/pkg.mk
 
-openblas-0.2.19.tgz.url = $(call GITHUB_DIR,xianyi,OpenBLAS,v0.2.19.tar.gz)
-openblas-0.2.19.tgz.sha256 = \
-    9c40b5e4970f27c5f6911cb0a28aa26b6c83f17418b69f8e5a116bb983ca8557
+openblas-0.2.20.tgz.url = $(call GITHUB_DIR,xianyi,OpenBLAS,v0.2.20.tar.gz)
+openblas-0.2.20.tgz.sha256 = \
+    5ef38b15d9c652985774869efd548b8e3e972e1e99475c673b25537ed7bcf394
 
 ifneq ($(BUILD_OPENBLAS),)
 
-do_extract: ../download/openblas-0.2.19.tgz
+do_extract: ../download/openblas-0.2.20.tgz
 	tar xzf $<
-	ln -sf OpenBLAS-0.2.19 work
+	ln -sf OpenBLAS-0.2.20 work
 
 # For static architecture we can skip single-precision and complex routines to
 # reduce build time. For dynamic architecture all the routines are in a single

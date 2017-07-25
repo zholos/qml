@@ -3,7 +3,7 @@ but still build OpenBLAS custom implementations of LAPACK routines.
 
 --- Makefile
 +++ Makefile
-@@ -201,7 +201,7 @@
+@@ -206,7 +206,7 @@
  	fi; \
  	done
  
@@ -28,7 +28,7 @@ On MinGW ln just copies the file, so do that after the file has been created.
 
 --- Makefile
 +++ Makefile
-@@ -130,7 +130,6 @@
+@@ -135,7 +135,6 @@
  	$(error OpenBLAS: neither static nor shared are enabled.)
  endif
  endif
@@ -36,7 +36,7 @@ On MinGW ln just copies the file, so do that after the file has been created.
  	@for d in $(SUBDIRS) ; \
  	do if test -d $$d; then \
  	  $(MAKE) -C $$d $(@F) || exit 1 ; \
-@@ -156,6 +155,7 @@
+@@ -161,6 +160,7 @@
  ifdef USE_THREAD
  	@echo USE_THREAD=$(USE_THREAD) >>  Makefile.conf_last
  endif
@@ -52,7 +52,7 @@ override it.
 
 --- Makefile.system
 +++ Makefile.system
-@@ -195,6 +195,8 @@
+@@ -201,6 +201,8 @@
  NEED_PIC = 1
  endif
  

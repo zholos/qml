@@ -1,6 +1,6 @@
 --- driver/others/memory.c
 +++ driver/others/memory.c
-@@ -1145,7 +1145,7 @@
+@@ -1187,7 +1187,7 @@
   error:
    printf("BLAS : Program is Terminated. Because you tried to allocate too many memory regions.\n");
  
