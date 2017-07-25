@@ -1,3 +1,7 @@
+Version 0.7.3 on 2017-07-25:
+  * Updated k.h download location.
+  * Updated to OpenBLAS 0.2.20.
+
 Version 0.7.2 on 2017-04-27:
   * Updated k.h download location.
 
