@@ -3,7 +3,7 @@ include $(dir $(lastword $(MAKEFILE_LIST)))common.mk
 all: build
 
 NETLIB_DIR = http://www.netlib.org
-Q_DIR = https://raw.githubusercontent.com/KxSystems/kdb/master
+Q_DIR = https://raw.githubusercontent.com/KxSystems/kdb/f4fb81b7dc7448c73d94ae9dff0610fd71c7fe93
 GITHUB_DIR = https://github.com/$(1)/$(2)/archive/$(3)
 
 .PRECIOUS: ../download/%.part
